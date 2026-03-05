@@ -1,0 +1,13 @@
+/* Base */
+body {
+  background: var(--bs-body-bg);
+}
+
+/* Small polish */
+.card {
+  border-radius: 1rem;
+}
+
+.nav-pills .nav-link {
+  border-radius: .75rem;
+}
