@@ -29,9 +29,17 @@
   const statusEl = document.getElementById("status");
   const roleEl = document.getElementById("role");
 
+  const confirmDeleteModalEl = document.getElementById("confirmDeleteModal");
+  const confirmDeleteModal = confirmDeleteModalEl
+    ? bootstrap.Modal.getOrCreateInstance(confirmDeleteModalEl)
+    : null;
+  const confirmDeleteBtn = document.getElementById("confirmUserDeleteBtn");
+
+  let pendingDeleteId = null
+
   // Toast
-  const toastEl = document.getElementById("appToast");
-  const toastBody = document.getElementById("toastBody");
+  const toastEl = document.getElementById("usersToast");
+  const toastBody = document.getElementById("usersToastBody");
   const toast = toastEl ? bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 2200 }) : null;
 
   // State
@@ -239,6 +247,7 @@
     emailEl.value = "";
     statusEl.value = "active";
     roleEl.value = "viewer";
+    pendingDeleteId = null;
 
     if (deleteBtn) deleteBtn.classList.add("d-none");
     if (userModalLabel) userModalLabel.textContent = "New user";
@@ -320,6 +329,13 @@
     searchInputMobile?.addEventListener("input", onFilterChange);
     statusFilter?.addEventListener("change", onFilterChange);
     sortBy?.addEventListener("change", onFilterChange);
+    confirmDeleteBtn?.addEventListener("click", () => {
+      if (!pendingDeleteId) return;
+
+      deleteUser(pendingDeleteId);
+      pendingDeleteId = null;
+      confirmDeleteModal?.hide();
+    });
 
     // New user button is in HTML (topbar), but we can also open modal via keyboard later
     userModalEl?.addEventListener("hidden.bs.modal", resetForm);
@@ -360,10 +376,10 @@
     deleteBtn?.addEventListener("click", () => {
       const id = userId.value;
       if (!id) return;
-      const ok = confirm("Delete this user?");
-      if (!ok) return;
-      deleteUser(id);
+      
+      pendingDeleteId = id;
       userModal?.hide();
+      confirmDeleteModal?.show;
     });
 
     exportCsvBtn?.addEventListener("click", () => {
