@@ -318,3 +318,8 @@ renderOrders();
 showToast("Sample orders restored.");
 });
 });
+
+.nav-link .badge {
+  font-size: 0.7rem;
+  border-radius: 999px;
+}

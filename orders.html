@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Orders • Olympus Admin Panel</title>
+<title>Orders • Olympus Admin Inc.</title>
 
 <!-- Bootstrap -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -26,8 +26,8 @@
       <div class="d-flex align-items-center gap-2">
         <div class="rounded-3 border p-2 fw-bold">OP</div>
         <div>
-          <div class="fw-semibold">Olympus Admin</div>
-          <div class="text-body-secondary small">Control Center</div>
+          <div class="fw-semibold" data-brand-name>Olympus Admin Inc.</div>
+          <div class="text-body-secondary small" data-brand-subtitle>Control Center</div>
         </div>
       </div>
     </div>
@@ -38,10 +38,10 @@
           <a class="nav-link" href="index.html">Dashboard</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="users.html">Users</a>
+          <a class="nav-link" href="users.html">Users<span class="badge bg-secondary ms-1" id="usersCount">0</span></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="orders.html">Orders</a>
+          <a class="nav-link" href="orders.html">Orders<span class="badge bg-secondary ms-1" id="ordersCount">0</span></a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="settings.html">Settings</a>
@@ -50,7 +50,7 @@
     </nav>
 
     <div class="mt-auto p-3 border-top small text-body-secondary">
-      © <span id="year"></span> Olympus Admin Panel
+      © <span id="year"></span> <span data-brand-name>Olympus Admin Inc.</span>
     </div>
   </aside>
 
@@ -262,7 +262,7 @@
 <!-- Sidebar Mobile -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMobile" aria-labelledby="sidebarMobileLabel">
 <div class="offcanvas-header border-bottom">
-<h5 class="offcanvas-title" id="sidebarMobileLabel">Olympus Admin</h5>
+<h5 class="offcanvas-title" id="sidebarMobileLabel" data-brand-name>Olympus Admin Inc.</h5>
 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 </div>
 <div class="offcanvas-body">

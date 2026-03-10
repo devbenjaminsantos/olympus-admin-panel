@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Users • Admin Panel</title>
+  <title>Users • Olympus Admin Inc.</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
@@ -19,8 +19,8 @@
           <div class="d-flex align-items-center gap-2">
             <div class="rounded-3 border p-2 fw-bold">AP</div>
             <div>
-              <div class="fw-semibold">Admin Panel</div>
-              <div class="text-body-secondary small">Generic SaaS</div>
+              <div class="fw-semibold" data-brand-name>Olympus Admin Inc.</div>
+              <div class="text-body-secondary small" data-brand-subtitle>Control Center</div>
             </div>
           </div>
         </div>
@@ -28,15 +28,15 @@
         <nav class="p-2">
           <ul class="nav nav-pills flex-column gap-1">
             <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link active" href="users.html">Users</a></li>
+            <li class="nav-item"><a class="nav-link active" href="users.html">Users<span class="badge bg-secondary ms-1" id="usersCount">0</span></a></li>
             <li class="nav-item"><a class="nav-link" href="#">Products</a></li>
-            <li class="nav-item"><a class="nav-link" href="orders.html">Orders</a></li>
+            <li class="nav-item"><a class="nav-link" href="orders.html">Orders<span class="badge bg-secondary ms-1" id="ordersCount">0</span></a></li>
             <li class="nav-item"><a class="nav-link" href="settings.html">Settings</a></li>
           </ul>
         </nav>
 
         <div class="mt-auto p-3 border-top small text-body-secondary">
-          © <span id="year"></span> Admin Panel
+          © <span id="year"></span> <span data-brand-name> Olympus Admin Inc.</span>
         </div>
       </aside>
 
