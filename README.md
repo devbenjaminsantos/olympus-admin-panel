@@ -1,63 +1,94 @@
 # Olympus Admin Panel
 
-Responsive admin dashboard built with **Bootstrap 5**, **Vanilla JavaScript**, **jQuery**, **DataTables**, and **Chart.js**.
+A responsive **Admin Dashboard** built with **Bootstrap 5**, **Vanilla JavaScript**, **jQuery**, **DataTables**, and **Chart.js**.
 
-Inspired by **Mount Olympus** from Greek mythology, this project was created as a front-end study project to demonstrate the use of multiple technologies in a single admin interface.
+This project was developed as a **front-end study project** to demonstrate CRUD operations, interface construction, interface construction, data manipulation, and integration of third-party libraries inside a management dashboard.
 
 ## Live Demo
 
-- [https://https://olympusadminpanel.vercel.app](https://https://olympusadminpanel.vercel.app)
+- [(https://https://[olympusadminpanel](olympusadminpanel.vercel.app)]
 
 ## Features
 
 ### Dashboard
 
+- Dynamic metrics based on stored data
+- Chart.js visualization
+- Sidebar counters for Users and Orders
+- Real time date and time
 - Responsive layout
-- Metric cards
-- Chart.js analytics
 - Recent activity widget
 - Progress overview
-- Dark / Light mode
 
 ### Users Module
 
 - CRUD operations
 - Modal forms
-- Filtering and sorting
-- Pagination
+- Filtering and pagination
 - CSV export
+- Toast notifications
+- Delete confirmation modal
 - LocalStorage persistence
 
 ### Orders Module
 
-- jQuery + DataTables integration
-- Advanced table interactions
+- Interactive table powered by **jQuery + DataTables**
 - Status filtering
+- Sorting and pagination
 - Create / Edit / Delete orders
-- Confirmation modal
+- CSV export
+- Delete confirmation modal
 - Toast notifications
 - LocalStorage persistence
 
 ### Settings Module
 
 - Configurable preferences
-- LocalStorage persistence
+- Dynamic branding across the interface
 - Reset to defaults
 - Toast feedback
+
+### System Features
+
+- Dark / Light mode
+- Responsive sidebar and mobile offcanvas
+- Persistent data using LocalStorage
+- Modular JavaScript structure
 
 ## Tech Stack
 
 - HTML5
 - CSS3
 - Bootstrap 5
-- JavaScript
+- JavaScript (ES6)
 - jQuery
 - DataTables
 - Chart.js
 
 ## Project Purpose
 
-This project was developed as a portfolio study project to demonstrate front-end concepts such as responsive layout design, table manipulation, CRUD logic, local persistence, UI components, and third-party library integration.
+The goal of this project is to demonstrate practical knowledge of:
+
+- CRUD operations in front-end applications
+- UI construction using Bootstrap components
+- Data manipulation with JavaScript
+- Interactive tables with jQuery and DataTables
+- Data visualization using Chart.js
+- Client-side persistence using LocalStorage
+- Modular organization of front-end code
+
+## Running Locally
+
+- Clone the repository
+- git clone https://github.com/devbenjaminsantos/olympus-admin-panel.git
+- Open the project folder and run the index.html file in your browser.
+
+## Future Improvements
+
+- API integration
+- Back-end authentication
+- Database persistence
+- Advanced analytics dashboard
 
 ## Author
 
