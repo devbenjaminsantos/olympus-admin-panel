@@ -12,19 +12,18 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 
 <!-- Custom CSS -->
-<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/style.css">
 </head>
 
 <body>
 <div class="container-fluid">
 <div class="row">
 
-```
   <!-- Sidebar (desktop) -->
   <aside class="col-lg-2 d-none d-lg-flex flex-column p-0 border-end min-vh-100 bg-body">
     <div class="p-3 border-bottom">
       <div class="d-flex align-items-center gap-2">
-        <div class="rounded-3 border p-2 fw-bold">OP</div>
+        <div class="rounded-3 border p-2 fw-bold">AP</div>
         <div>
           <div class="fw-semibold" data-brand-name>Olympus Admin Inc.</div>
           <div class="text-body-secondary small" data-brand-subtitle>Control Center</div>
@@ -41,7 +40,7 @@
           <a class="nav-link" href="users.html">Users<span class="badge bg-secondary ms-1" id="usersCount">0</span></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="orders.html">Orders<span class="badge bg-secondary ms-1" id="ordersCount">0</span></a>
+          <a class="nav-link active" href="orders.html">Orders<span class="badge bg-secondary ms-1" id="ordersCount">0</span></a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="settings.html">Settings</a>
@@ -105,14 +104,14 @@
 <option value="Cancelled">Cancelled</option>
 </select>
 
-<button id=ëxportOrderCSV" class="btn btn-outline-primary" type="button">Export CSV</button>
+<button id="exportOrderCSV" class="btn btn-outline-primary" type="button">Export CSV</button>
 <button id="resetOrdersDemo" class="btn btn-outline-danger" type="button">Restore Demo</button>
 <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#orderModal">+ New Order</button>
 
 </div>
 </div>
 
-            <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#orderModal">+ New Order</button>
+            
           </div>
 
           <div class="table-responsive">
@@ -255,15 +254,13 @@
     </section>
   </main>
 </div>
-```
-
 </div>
 
 <!-- Sidebar Mobile -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMobile" aria-labelledby="sidebarMobileLabel">
-<div class="offcanvas-header border-bottom">
-<h5 class="offcanvas-title" id="sidebarMobileLabel" data-brand-name>Olympus Admin Inc.</h5>
-<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMobile" aria-labelledby="sidebarMobileLabel">
+    <div class="offcanvas-header border-bottom">
+      <h5 class="offcanvas-title" id="sidebarMobileLabel" data-brand-name>Olympus Admin Inc.</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 </div>
 <div class="offcanvas-body">
 <ul class="nav nav-pills flex-column gap-1">

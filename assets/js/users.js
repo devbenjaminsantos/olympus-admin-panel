@@ -1,9 +1,10 @@
-// assets/js/users.js
-
 (function () {
-  const STORAGE_KEY = "admin_users_v1";
 
-  // UI
+  // ── Constantes ───────────────────────────────────────
+  const STORAGE_KEY = "admin_users_v1";
+  const pageSize = 7;
+
+  // ── Elementos do DOM ─────────────────────────────────
   const tbody = document.getElementById("usersTbody");
   const resultsMeta = document.getElementById("resultsMeta");
   const pageMeta = document.getElementById("pageMeta");
@@ -16,9 +17,11 @@
   const exportCsvBtn = document.getElementById("exportCsv");
   const resetDataBtn = document.getElementById("resetData");
 
-  // Modal / form
+  // Modal de criação/edição de usuário
   const userModalEl = document.getElementById("userModal");
-  const userModal = userModalEl ? bootstrap.Modal.getOrCreateInstance(userModalEl) : null;
+  const userModal = userModalEl
+    ? bootstrap.Modal.getOrCreateInstance(userModalEl)
+    : null;
   const userForm = document.getElementById("userForm");
   const userModalLabel = document.getElementById("userModalLabel");
   const deleteBtn = document.getElementById("deleteBtn");
@@ -29,24 +32,33 @@
   const statusEl = document.getElementById("status");
   const roleEl = document.getElementById("role");
 
+  // Modal de confirmação de exclusão
   const confirmDeleteModalEl = document.getElementById("confirmDeleteModal");
   const confirmDeleteModal = confirmDeleteModalEl
     ? bootstrap.Modal.getOrCreateInstance(confirmDeleteModalEl)
     : null;
   const confirmDeleteBtn = document.getElementById("confirmUserDeleteBtn");
 
-  let pendingDeleteId = null
+  // Modal de confirmação de reset
+  const confirmResetModalEl = document.getElementById("confirmResetModal");
+  const confirmResetModal = confirmResetModalEl
+    ? bootstrap.Modal.getOrCreateInstance(confirmResetModalEl)
+    : null;
+  const confirmResetBtn = document.getElementById("confirmResetBtn");
 
   // Toast
   const toastEl = document.getElementById("usersToast");
   const toastBody = document.getElementById("usersToastBody");
-  const toast = toastEl ? bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 2200 }) : null;
+  const toast = toastEl
+    ? bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 2200 })
+    : null;
 
-  // State
+  // ── Estado ───────────────────────────────────────────
   let allUsers = [];
   let page = 1;
-  const pageSize = 7;
+  let pendingDeleteId = null;
 
+  // ── Utilitários ──────────────────────────────────────
   function showToast(message) {
     if (!toast || !toastBody) return;
     toastBody.textContent = message;
@@ -58,16 +70,73 @@
     return Math.random().toString(16).slice(2) + Date.now().toString(16);
   }
 
+  // ── Storage ──────────────────────────────────────────
   function demoUsers() {
     return [
-      { id: uid(), name: "Ava Johnson", email: "ava@demo.com", status: "active", role: "admin", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 30 },
-      { id: uid(), name: "Noah Smith", email: "noah@demo.com", status: "active", role: "manager", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 18 },
-      { id: uid(), name: "Mia Brown", email: "mia@demo.com", status: "inactive", role: "viewer", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 12 },
-      { id: uid(), name: "Liam Davis", email: "liam@demo.com", status: "active", role: "support", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 9 },
-      { id: uid(), name: "Sophia Miller", email: "sophia@demo.com", status: "active", role: "viewer", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 6 },
-      { id: uid(), name: "Ethan Wilson", email: "ethan@demo.com", status: "inactive", role: "support", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 3 },
-      { id: uid(), name: "Isabella Moore", email: "isabella@demo.com", status: "active", role: "manager", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2 },
-      { id: uid(), name: "Lucas Taylor", email: "lucas@demo.com", status: "active", role: "viewer", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 1 },
+      {
+        id: uid(),
+        name: "Ava Johnson",
+        email: "ava@demo.com",
+        status: "active",
+        role: "admin",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 30,
+      },
+      {
+        id: uid(),
+        name: "Noah Smith",
+        email: "noah@demo.com",
+        status: "active",
+        role: "manager",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 18,
+      },
+      {
+        id: uid(),
+        name: "Mia Brown",
+        email: "mia@demo.com",
+        status: "inactive",
+        role: "viewer",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 12,
+      },
+      {
+        id: uid(),
+        name: "Liam Davis",
+        email: "liam@demo.com",
+        status: "active",
+        role: "support",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 9,
+      },
+      {
+        id: uid(),
+        name: "Sophia Miller",
+        email: "sophia@demo.com",
+        status: "active",
+        role: "viewer",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 6,
+      },
+      {
+        id: uid(),
+        name: "Ethan Wilson",
+        email: "ethan@demo.com",
+        status: "inactive",
+        role: "support",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 3,
+      },
+      {
+        id: uid(),
+        name: "Isabella Moore",
+        email: "isabella@demo.com",
+        status: "active",
+        role: "manager",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2,
+      },
+      {
+        id: uid(),
+        name: "Lucas Taylor",
+        email: "lucas@demo.com",
+        status: "active",
+        role: "viewer",
+        createdAt: Date.now() - 1000 * 60 * 60 * 24 * 1,
+      },
     ];
   }
 
@@ -89,28 +158,12 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
   }
 
+  // ── Filtros e ordenação ──────────────────────────────
   function getSearch() {
     const a = (searchInput?.value || "").trim();
     const b = (searchInputMobile?.value || "").trim();
     // prefer the one that user is typing on
     return b.length > a.length ? b : a;
-  }
-
-  function roleBadge(role) {
-    const map = {
-      admin: "danger",
-      manager: "primary",
-      support: "warning",
-      viewer: "secondary"
-    };
-    const cls = map[role] || "secondary";
-    return `<span class="badge text-bg-${cls}">${role}</span>`;
-  }
-
-  function statusBadge(status) {
-    const cls = status === "active" ? "success" : "secondary";
-    const label = status === "active" ? "Active" : "Inactive";
-    return `<span class="badge text-bg-${cls}">${label}</span>`;
   }
 
   function applyFilters(users) {
@@ -120,15 +173,16 @@
     let out = [...users];
 
     if (q) {
-      out = out.filter(u =>
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q)
+      out = out.filter(
+        (u) =>
+          u.name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          u.role.toLowerCase().includes(q),
       );
     }
 
     if (status !== "all") {
-      out = out.filter(u => u.status === status);
+      out = out.filter((u) => u.status === status);
     }
 
     const sort = sortBy?.value || "name_asc";
@@ -143,6 +197,24 @@
     return out;
   }
 
+  // ── Renderização ─────────────────────────────────────
+  function roleBadge(role) {
+    const map = {
+      admin: "danger",
+      manager: "primary",
+      support: "warning",
+      viewer: "secondary",
+    };
+    const cls = map[role] || "secondary";
+    return `<span class="badge text-bg-${cls}">${role}</span>`;
+  }
+
+  function statusBadge(status) {
+    const cls = status === "active" ? "success" : "secondary";
+    const label = status === "active" ? "Active" : "Inactive";
+    return `<span class="badge text-bg-${cls}">${label}</span>`;
+  }
+
   function paginate(items, currentPage, size) {
     const total = items.length;
     const totalPages = Math.max(1, Math.ceil(total / size));
@@ -155,7 +227,7 @@
       totalPages,
       items: items.slice(start, end),
       startIndex: total === 0 ? 0 : start + 1,
-      endIndex: Math.min(end, total)
+      endIndex: Math.min(end, total),
     };
   }
 
@@ -180,9 +252,11 @@
       return li;
     };
 
-    pagination.appendChild(mkItem("Prev", currentPage - 1, currentPage === 1, false));
+    pagination.appendChild(
+      mkItem("Prev", currentPage - 1, currentPage === 1, false),
+    );
 
-    // compact window
+    // Janela compacta de páginas — exibe no máximo 5 botões por vez
     const windowSize = 5;
     let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
     let end = Math.min(totalPages, start + windowSize - 1);
@@ -192,7 +266,9 @@
       pagination.appendChild(mkItem(String(p), p, false, p === currentPage));
     }
 
-    pagination.appendChild(mkItem("Next", currentPage + 1, currentPage === totalPages, false));
+    pagination.appendChild(
+      mkItem("Next", currentPage + 1, currentPage === totalPages, false),
+    );
   }
 
   function renderTable(rows, offsetIndex) {
@@ -224,8 +300,10 @@
       tbody.appendChild(tr);
     });
 
-    tbody.querySelectorAll('[data-action="edit"]').forEach(btn => {
-      btn.addEventListener("click", () => openEdit(btn.getAttribute("data-id")));
+    tbody.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener("click", () =>
+        openEdit(btn.getAttribute("data-id")),
+      );
     });
   }
 
@@ -235,11 +313,13 @@
     page = p.page;
 
     if (resultsMeta) resultsMeta.textContent = `${p.total} total result(s)`;
-    if (pageMeta) pageMeta.textContent = `Showing ${p.startIndex}–${p.endIndex} of ${p.total}`;
+    if (pageMeta)
+      pageMeta.textContent = `Showing ${p.startIndex}–${p.endIndex} of ${p.total}`;
     renderTable(p.items, p.startIndex);
     renderPagination(p.totalPages, p.page);
   }
 
+  // ── Modal ────────────────────────────────────────────
   function resetForm() {
     userForm?.classList.remove("was-validated");
     userId.value = "";
@@ -259,7 +339,7 @@
   }
 
   function openEdit(id) {
-    const u = allUsers.find(x => x.id === id);
+    const u = allUsers.find((x) => x.id === id);
     if (!u) return;
 
     userId.value = u.id;
@@ -274,7 +354,7 @@
   }
 
   function upsertUser(payload) {
-    const existingIndex = allUsers.findIndex(u => u.id === payload.id);
+    const existingIndex = allUsers.findIndex((u) => u.id === payload.id);
 
     if (existingIndex >= 0) {
       allUsers[existingIndex] = { ...allUsers[existingIndex], ...payload };
@@ -289,26 +369,31 @@
   }
 
   function deleteUser(id) {
-    allUsers = allUsers.filter(u => u.id !== id);
+    allUsers = allUsers.filter((u) => u.id !== id);
     saveUsers(allUsers);
     render();
     showToast("User deleted.");
   }
 
+  // ── Export ───────────────────────────────────────────
   function exportCsv(users) {
     const header = ["name", "email", "status", "role", "createdAt"];
     const lines = [
       header.join(","),
-      ...users.map(u => [
-        JSON.stringify(u.name),
-        JSON.stringify(u.email),
-        u.status,
-        u.role,
-        u.createdAt
-      ].join(","))
+      ...users.map((u) =>
+        [
+          JSON.stringify(u.name),
+          JSON.stringify(u.email),
+          u.status,
+          u.role,
+          u.createdAt,
+        ].join(","),
+      ),
     ];
 
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
@@ -321,30 +406,49 @@
     URL.revokeObjectURL(url);
   }
 
-  // Events
+  // ── Eventos ──────────────────────────────────────────
   function bindEvents() {
-    const onFilterChange = () => { page = 1; render(); };
+    const onFilterChange = () => {
+      page = 1;
+      render();
+    };
 
     searchInput?.addEventListener("input", onFilterChange);
     searchInputMobile?.addEventListener("input", onFilterChange);
     statusFilter?.addEventListener("change", onFilterChange);
     sortBy?.addEventListener("change", onFilterChange);
+
+    // Confirma exclusão do usuário selecionado
     confirmDeleteBtn?.addEventListener("click", () => {
       if (!pendingDeleteId) return;
-
       deleteUser(pendingDeleteId);
       pendingDeleteId = null;
       confirmDeleteModal?.hide();
     });
 
-    // New user button is in HTML (topbar), but we can also open modal via keyboard later
+    // Confirma reset dos dados demo
+    confirmResetBtn?.addEventListener("click", () => {
+      const seeded = demoUsers();
+      allUsers = seeded;
+      saveUsers(allUsers);
+      page = 1;
+      render();
+      showToast("Demo reset.");
+      confirmResetModal?.hide();
+    });
+
+    resetDataBtn?.addEventListener("click", () => {
+      confirmResetModal?.show();
+    });
+
+    // Limpa o formulário ao fechar o modal
     userModalEl?.addEventListener("hidden.bs.modal", resetForm);
 
     userForm?.addEventListener("submit", (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      // bootstrap validation
+      // Validação nativa do Bootstrap
       if (!userForm.checkValidity()) {
         userForm.classList.add("was-validated");
         return;
@@ -359,11 +463,15 @@
         email: emailEl.value.trim().toLowerCase(),
         status: statusEl.value,
         role: roleEl.value,
-        createdAt: userId.value ? (allUsers.find(u => u.id === id)?.createdAt || now) : now
+        createdAt: userId.value
+          ? allUsers.find((u) => u.id === id)?.createdAt || now
+          : now,
       };
 
-      // Basic email uniqueness check (demo-level)
-      const isDuplicate = allUsers.some(u => u.email === payload.email && u.id !== payload.id);
+      // Verificação básica de email duplicado
+      const isDuplicate = allUsers.some(
+        (u) => u.email === payload.email && u.id !== payload.id,
+      );
       if (isDuplicate) {
         showToast("Email already exists.");
         return;
@@ -373,13 +481,13 @@
       userModal?.hide();
     });
 
+    // Abre confirmação antes de deletar
     deleteBtn?.addEventListener("click", () => {
       const id = userId.value;
       if (!id) return;
-      
       pendingDeleteId = id;
       userModal?.hide();
-      confirmDeleteModal?.show;
+      confirmDeleteModal?.show();
     });
 
     exportCsvBtn?.addEventListener("click", () => {
@@ -387,24 +495,11 @@
       exportCsv(filtered);
       showToast("CSV exported.");
     });
-
-    resetDataBtn?.addEventListener("click", () => {
-      const ok = confirm("Reset demo data? This will overwrite local changes.");
-      if (!ok) return;
-      const seeded = demoUsers();
-      allUsers = seeded;
-      saveUsers(allUsers);
-      page = 1;
-      render();
-      showToast("Demo reset.");
-    });
   }
 
-  // Init
+  // ── Inicialização ────────────────────────────────────
   allUsers = loadUsers();
   bindEvents();
   render();
 
-  // Hook “New user” button that exists in topbar
-  // (it already opens the modal via data-bs-target, but we keep this handy if you want shortcuts later)
 })();
