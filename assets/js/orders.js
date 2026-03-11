@@ -22,7 +22,7 @@ $(document).ready(function () {
   function getDefaultOrders() {
     return [
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1001",
         customer: "Ava Johnson",
         product: "Premium Plan",
@@ -31,7 +31,7 @@ $(document).ready(function () {
         total: 120.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1002",
         customer: "Noah Smith",
         product: "Business Plan",
@@ -40,7 +40,7 @@ $(document).ready(function () {
         total: 250.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1003",
         customer: "Mia Brown",
         product: "Starter Plan",
@@ -49,7 +49,7 @@ $(document).ready(function () {
         total: 80.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1004",
         customer: "Liam Davis",
         product: "Enterprise Plan",
@@ -58,7 +58,7 @@ $(document).ready(function () {
         total: 540.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1005",
         customer: "Sophia Miller",
         product: "Premium Plan",
@@ -67,7 +67,7 @@ $(document).ready(function () {
         total: 120.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1006",
         customer: "Ethan Wilson",
         product: "Starter Plan",
@@ -76,7 +76,7 @@ $(document).ready(function () {
         total: 80.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1007",
         customer: "Isabella Moore",
         product: "Business Plan",
@@ -85,7 +85,7 @@ $(document).ready(function () {
         total: 250.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1008",
         customer: "Lucas Taylor",
         product: "Enterprise Plan",
@@ -94,7 +94,7 @@ $(document).ready(function () {
         total: 540.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1009",
         customer: "Emma White",
         product: "Premium Plan",
@@ -103,7 +103,7 @@ $(document).ready(function () {
         total: 120.0,
       },
       {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
         orderId: "#1010",
         customer: "James Harris",
         product: "Starter Plan",

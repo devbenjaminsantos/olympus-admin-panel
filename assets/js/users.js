@@ -1,5 +1,4 @@
 (function () {
-
   // ── Constantes ───────────────────────────────────────
   const STORAGE_KEY = "admin_users_v1";
   const pageSize = 7;
@@ -501,5 +500,4 @@
   allUsers = loadUsers();
   bindEvents();
   render();
-
 })();
