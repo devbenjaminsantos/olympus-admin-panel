@@ -1,95 +1,55 @@
-# Olympus Admin Panel
+# 🖥 Admin Panel — Olympus
 
-A responsive **Admin Dashboard** built with **Bootstrap 5**, **Vanilla JavaScript**, **jQuery**, **DataTables**, and **Chart.js**.
+Painel administrativo multi-página com dashboard, gerenciamento de usuários, pedidos e configurações globais.
 
-This project was developed as a **front-end study project** to demonstrate CRUD operations, interface construction, interface construction, data manipulation, and integration of third-party libraries inside a management dashboard.
+🔗 [Ver projeto ao vivo](https://olympusadminpanel.vercel.app)
 
-## Live Demo
+---
 
-- [(https://https://[olympusadminpanel](olympusadminpanel.vercel.app)]
+## 🖼 Preview
 
-## Features
+! [Demo](./media/demo.gif)
+! [Tela inicial](./media/inicio.png)
+! [Tela de usuários](./media/usuario.png)
+! [Tela de pedidos](./media/pedido.png)
+! [Configurações](./media/configuracao.png)
 
-### Dashboard
+---
 
-- Dynamic metrics based on stored data
-- Chart.js visualization
-- Sidebar counters for Users and Orders
-- Real time date and time
-- Responsive layout
-- Recent activity widget
-- Progress overview
+## ✨ Funcionalidades
 
-### Users Module
+- 📊 Dashboard com gráficos e métricas em tempo real
+- 👥 Gerenciamento de usuários com CRUD completo
+- 📦 Gerenciamento de pedidos com filtros e paginação
+- 📤 Exportação de dados em CSV
+- 🔔 Notificações toast e modais de confirmação
+- 🌙 Tema claro/escuro persistido via localStorage
 
-- CRUD operations
-- Modal forms
-- Filtering and pagination
-- CSV export
-- Toast notifications
-- Delete confirmation modal
-- LocalStorage persistence
+---
 
-### Orders Module
+## 🛠 Tecnologias
 
-- Interactive table powered by **jQuery + DataTables**
-- Status filtering
-- Sorting and pagination
-- Create / Edit / Delete orders
-- CSV export
-- Delete confirmation modal
-- Toast notifications
-- LocalStorage persistence
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-563D7C?style=flat&logo=bootstrap&logoColor=white)
+![jQuery](https://img.shields.io/badge/jQuery-0769AD?style=flat&logo=jquery&logoColor=white)
+![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?style=flat&logo=chart.js&logoColor=white)
 
-### Settings Module
+---
 
-- Configurable preferences
-- Dynamic branding across the interface
-- Reset to defaults
-- Toast feedback
+## 🚀 Como rodar localmente
 
-### System Features
+### Clone o repositório
 
-- Dark / Light mode
-- Responsive sidebar and mobile offcanvas
-- Persistent data using LocalStorage
-- Modular JavaScript structure
+git clone https://github.com/devbenjaminsantos/nome-do-repo
 
-## Tech Stack
+### Abra o index.html no navegador
 
-- HTML5
-- CSS3
-- Bootstrap 5
-- JavaScript (ES6)
-- jQuery
-- DataTables
-- Chart.js
+### Ou use a extensão Live Server no VS Code
 
-## Project Purpose
+---
 
-The goal of this project is to demonstrate practical knowledge of:
+## 👨‍💻 Autor
 
-- CRUD operations in front-end applications
-- UI construction using Bootstrap components
-- Data manipulation with JavaScript
-- Interactive tables with jQuery and DataTables
-- Data visualization using Chart.js
-- Client-side persistence using LocalStorage
-- Modular organization of front-end code
-
-## Running Locally
-
-- Clone the repository
-- git clone https://github.com/devbenjaminsantos/olympus-admin-panel.git
-- Open the project folder and run the index.html file in your browser.
-
-## Future Improvements
-
-- API integration
-- Back-end authentication
-- Database persistence
-- Advanced analytics dashboard
-
-## Author
-
-Benjamin
+Feito por **Benjamin Montenegro** — [LinkedIn](https://linkedin.com/in/benjaminmontenegro) | [Portfólio](https://devbenjaminsantos.github.io/benjamin-portfolio/)
