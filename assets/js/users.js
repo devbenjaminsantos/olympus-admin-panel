@@ -64,7 +64,7 @@
   }
 
   function showError(error) {
-    const message = error?.message || "Unexpected error";
+    const message = error?.message || "Something went wrong.";
     showToast(message);
   }
 
@@ -119,7 +119,7 @@
     updateStatusCard(
       "loading",
       "Loading users",
-      "Synchronizing records with the API.",
+      "Syncing records with the API.",
     );
 
     const users = await api.request("/users");
@@ -249,7 +249,7 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="6" class="text-center text-body-secondary py-5">
-            No users found for the current filters.
+            No users match the current filters.
           </td>
         </tr>
       `;
@@ -325,7 +325,7 @@
       passwordHelp.textContent = "Required for new users. Optional when editing.";
     }
     if (deleteBtn) deleteBtn.classList.add("d-none");
-    if (userModalLabel) userModalLabel.textContent = "New user";
+    if (userModalLabel) userModalLabel.textContent = "Add user";
   }
 
   function openEdit(id) {
@@ -354,7 +354,7 @@
       body: JSON.stringify(payload),
     });
     await loadUsersFromApi();
-    showToast("User created.");
+    showToast("User added.");
   }
 
   async function updateUser(id, payload) {
@@ -369,7 +369,7 @@
   async function deleteUser(id) {
     await api.request(`/users/${id}`, { method: "DELETE" });
     await loadUsersFromApi();
-    showToast("User deleted.");
+    showToast("User removed.");
   }
 
   function exportCsv(users) {
@@ -427,7 +427,7 @@
       try {
         await loadUsersFromApi();
         page = 1;
-        showToast("Users synchronized from API.");
+        showToast("User data refreshed.");
         confirmResetModal?.hide();
       } catch (error) {
         setLoadingState(false);
@@ -495,7 +495,7 @@
     exportCsvBtn?.addEventListener("click", () => {
       const filtered = applyFilters(allUsers);
       exportCsv(filtered);
-      showToast("CSV exported.");
+      showToast("CSV export ready.");
     });
 
     usersRetryBtn?.addEventListener("click", async () => {

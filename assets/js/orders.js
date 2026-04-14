@@ -34,7 +34,7 @@ $(document).ready(function () {
   }
 
   function showError(error) {
-    showToast(error?.message || "Unexpected error.");
+    showToast(error?.message || "Something went wrong.");
   }
 
   function setLoadingState(loading) {
@@ -162,7 +162,7 @@ $(document).ready(function () {
       updateStatusCard(
         "empty",
         "No orders yet",
-        "Create the first order to start tracking operational activity.",
+        "Add the first order to start tracking operational activity.",
       );
     } else if (!isLoading) {
       hideStatusCard();
@@ -178,7 +178,7 @@ $(document).ready(function () {
     form.reset();
     form.classList.remove("was-validated");
     editingId = null;
-    $("#orderModalLabel").text("New Order");
+    $("#orderModalLabel").text("Add order");
     $("#orderId").val("");
   }
 
@@ -187,7 +187,7 @@ $(document).ready(function () {
     updateStatusCard(
       "loading",
       "Loading orders",
-      "Fetching customers and orders from the API.",
+      "Syncing customers and orders with the API.",
     );
     await loadCustomers();
     await loadOrders();
@@ -197,7 +197,7 @@ $(document).ready(function () {
 
   async function exportOrdersCSV() {
     if (!orders.length) {
-      showToast("No orders to export.");
+      showToast("No orders available for export.");
       return;
     }
 
@@ -236,7 +236,7 @@ $(document).ready(function () {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    showToast("Orders exported successfully.");
+    showToast("Order export ready.");
   }
 
   function updateStatusFilter() {
@@ -274,7 +274,7 @@ $(document).ready(function () {
 
   function openEditModal(order) {
     editingId = order.id;
-    $("#orderModalLabel").text("Edit Order");
+    $("#orderModalLabel").text("Edit order");
     $("#orderId").val(order.orderId);
     $("#customer").val(order.customerId);
     $("#product").val(order.product);
@@ -307,10 +307,10 @@ $(document).ready(function () {
       try {
         if (editingId) {
           await updateOrder(editingId, payload);
-          showToast("Order updated successfully.");
+          showToast("Order updated.");
         } else {
           await createOrder(payload);
-          showToast("Order created successfully.");
+          showToast("Order added.");
         }
 
         await syncOrders();
@@ -353,7 +353,7 @@ $(document).ready(function () {
       try {
         await deleteOrder(id);
         await syncOrders();
-        showToast("Order deleted successfully.");
+        showToast("Order removed.");
         const confirmModal = bootstrap.Modal.getInstance(modalEl);
         confirmModal?.hide();
       } catch (error) {
@@ -378,7 +378,7 @@ $(document).ready(function () {
     $("#resetOrdersDemo").on("click", async function () {
       try {
         await syncOrders();
-        showToast("Orders synchronized from API.");
+        showToast("Order data refreshed.");
       } catch (error) {
         setLoadingState(false);
         updateStatusCard(

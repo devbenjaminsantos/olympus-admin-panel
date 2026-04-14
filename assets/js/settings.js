@@ -118,7 +118,7 @@
       });
       notifySettingsChanged(data);
       hideStatusCard();
-      showToast("Settings saved successfully.");
+      showToast("Settings saved.");
     } catch (error) {
       updateStatusCard(
         "error",
@@ -141,7 +141,7 @@
       fillForm({ ...defaults, ...response.settings });
       notifySettingsChanged(response.settings);
       hideStatusCard();
-      showToast("Default settings restored.");
+      showToast("Settings reset to defaults.");
     } catch (error) {
       updateStatusCard(
         "error",
