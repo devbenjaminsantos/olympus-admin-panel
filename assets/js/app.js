@@ -3,24 +3,87 @@
   const html = document.documentElement;
   const btn = document.getElementById("themeToggle");
   const year = document.getElementById("year");
+  const dashboardStatusEl = document.getElementById("dashboardStatus");
+  const dashboardStatusTitleEl = document.getElementById("dashboardStatusTitle");
+  const dashboardStatusMessageEl = document.getElementById(
+    "dashboardStatusMessage",
+  );
+  const dashboardRetryBtn = document.getElementById("dashboardRetryBtn");
+  const salesChartMetaEl = document.getElementById("salesChartMeta");
 
-  function showApiWarning(message) {
-    let alert = document.getElementById("apiStatusAlert");
-
-    if (!alert) {
-      alert = document.createElement("div");
-      alert.id = "apiStatusAlert";
-      alert.className = "alert alert-warning m-3";
-      alert.role = "alert";
-
-      const main = document.querySelector("main");
-      const container = document.querySelector(".container-fluid, .container");
-      const target = main || container || document.body;
-      target.prepend(alert);
+  function updateDashboardStatus(variant, title, message, showRetry = false) {
+    if (
+      !dashboardStatusEl ||
+      !dashboardStatusTitleEl ||
+      !dashboardStatusMessageEl
+    ) {
+      return;
     }
 
-    alert.textContent = message;
-    alert.classList.remove("d-none");
+    dashboardStatusEl.className = "panel-status is-visible mb-3";
+    if (variant === "loading") {
+      dashboardStatusEl.classList.add("is-loading");
+    }
+
+    dashboardStatusTitleEl.textContent = title;
+    dashboardStatusMessageEl.textContent = message;
+    dashboardRetryBtn?.classList.toggle("d-none", !showRetry);
+  }
+
+  function hideDashboardStatus() {
+    if (!dashboardStatusEl) return;
+    dashboardStatusEl.className = "panel-status mb-3";
+  }
+
+  function updateProgressBar(barId, valueId, percentage) {
+    const safeValue = Math.max(0, Math.min(100, Math.round(percentage)));
+    const bar = document.getElementById(barId);
+    const label = document.getElementById(valueId);
+
+    if (bar) {
+      bar.style.width = `${safeValue}%`;
+      bar.parentElement?.setAttribute("aria-valuenow", String(safeValue));
+    }
+
+    if (label) {
+      label.textContent = `${safeValue}%`;
+    }
+  }
+
+  function updateProgressOverview(userStats, orderStats) {
+    const revenueGoal = orderStats.totalRevenue
+      ? (Number(orderStats.totalRevenue) / 5000) * 100
+      : 0;
+    const activeUsers = Number(userStats.active || 0);
+    const totalUsers = Number(userStats.total || 0);
+    const paidOrders = Number(orderStats.paid || 0);
+    const totalOrders = Number(orderStats.total || 0);
+    const userGrowth = totalUsers ? (activeUsers / totalUsers) * 100 : 0;
+    const orderCompletion = totalOrders ? (paidOrders / totalOrders) * 100 : 0;
+
+    updateProgressBar("revenueGoalBar", "revenueGoalValue", revenueGoal);
+    updateProgressBar("userGrowthBar", "userGrowthValue", userGrowth);
+    updateProgressBar(
+      "orderCompletionBar",
+      "orderCompletionValue",
+      orderCompletion,
+    );
+  }
+
+  function buildChartData(byMonth = []) {
+    if (!byMonth.length) {
+      return {
+        labels: [],
+        values: [],
+      };
+    }
+
+    const ordered = [...byMonth].reverse();
+
+    return {
+      labels: ordered.map((item) => item.month),
+      values: ordered.map((item) => Number(item.revenue || 0)),
+    };
   }
 
   // year footer
@@ -54,7 +117,7 @@
       .trim();
   }
 
-  function renderSalesChart() {
+  function renderSalesChart(chartData = null) {
     if (!chartCanvas || !window.Chart) return;
 
     const ctx = chartCanvas.getContext("2d");
@@ -67,30 +130,37 @@
     // Destroy if already exists (avoid duplicationn)
     if (chartCanvas._chart) chartCanvas._chart.destroy();
 
+    const fallbackData = {
+      labels: [
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+      ],
+      values: [
+        1200, 1400, 1350, 1600, 1550, 1700, 1650, 1800, 2100, 1950, 2200,
+        2400,
+      ],
+    };
+    const finalData =
+      chartData && chartData.labels?.length ? chartData : fallbackData;
+
     chartCanvas._chart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: [
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-          "Jan",
-          "Feb",
-          "Mar",
-        ],
+        labels: finalData.labels,
         datasets: [
           {
             label: "Sales",
-            data: [
-              1200, 1400, 1350, 1600, 1550, 1700, 1650, 1800, 2100, 1950, 2200,
-              2400,
-            ],
+            data: finalData.values,
             tension: 0.35,
             fill: false,
             borderColor: primary,
@@ -130,31 +200,53 @@
     });
   }
 
+  function applyDashboardMetrics(userStats, orderStats) {
+    const totalUsersEl = document.getElementById("totalUsers");
+    const totalOrdersEl = document.getElementById("totalOrders");
+    const pendingOrdersEl = document.getElementById("pendingOrders");
+    const totalRevenueEl = document.getElementById("totalRevenue");
+
+    if (totalUsersEl) totalUsersEl.textContent = userStats.total ?? 0;
+    if (totalOrdersEl) totalOrdersEl.textContent = orderStats.total ?? 0;
+    if (pendingOrdersEl) pendingOrdersEl.textContent = orderStats.pending ?? 0;
+    if (totalRevenueEl) {
+      totalRevenueEl.textContent = `$${Number(
+        orderStats.totalRevenue || 0,
+      ).toFixed(2)}`;
+    }
+
+    updateProgressOverview(userStats, orderStats);
+
+    if (salesChartMetaEl) {
+      salesChartMetaEl.textContent = orderStats.byMonth?.length
+        ? "Revenue by month"
+        : "Waiting for order history";
+    }
+
+    renderSalesChart(buildChartData(orderStats.byMonth));
+  }
+
   async function loadDashboardMetrics() {
     if (api?.getToken?.()) {
       try {
+        updateDashboardStatus(
+          "loading",
+          "Loading dashboard",
+          "Fetching metrics and chart data from the API.",
+        );
         const [userStats, orderStats] = await Promise.all([
           api.request("/users/stats"),
           api.request("/orders/stats"),
         ]);
-
-        const totalUsersEl = document.getElementById("totalUsers");
-        const totalOrdersEl = document.getElementById("totalOrders");
-        const pendingOrdersEl = document.getElementById("pendingOrders");
-        const totalRevenueEl = document.getElementById("totalRevenue");
-
-        if (totalUsersEl) totalUsersEl.textContent = userStats.total ?? 0;
-        if (totalOrdersEl) totalOrdersEl.textContent = orderStats.total ?? 0;
-        if (pendingOrdersEl) pendingOrdersEl.textContent = orderStats.pending ?? 0;
-        if (totalRevenueEl) {
-          totalRevenueEl.textContent = `$${Number(
-            orderStats.totalRevenue || 0,
-          ).toFixed(2)}`;
-        }
+        applyDashboardMetrics(userStats, orderStats);
+        hideDashboardStatus();
         return;
       } catch {
-        showApiWarning(
-          "Nao foi possivel carregar metricas reais. Verifique a conexao com a API.",
+        updateDashboardStatus(
+          "error",
+          "Unable to load dashboard",
+          "The API did not respond as expected. You can try again.",
+          true,
         );
         return;
       }
@@ -198,6 +290,35 @@
     if (pendingOrdersEl) pendingOrdersEl.textContent = pendingOrders;
     if (totalRevenueEl)
       totalRevenueEl.textContent = `$${totalRevenue.toFixed(2)}`;
+
+    updateProgressOverview(
+      {
+        total: totalUsers,
+        active: users.filter((user) => user.status === "active").length,
+      },
+      {
+        total: totalOrders,
+        pending: pendingOrders,
+        paid: orders.filter((order) => order.status === "Paid").length,
+        totalRevenue,
+      },
+    );
+
+    if (salesChartMetaEl) {
+      salesChartMetaEl.textContent = totalOrders
+        ? "Local demo data"
+        : "Waiting for order history";
+    }
+
+    if (!totalOrders && api?.getToken?.()) {
+      updateDashboardStatus(
+        "empty",
+        "No operational data yet",
+        "Create users and orders to populate the dashboard.",
+      );
+    } else {
+      hideDashboardStatus();
+    }
   }
 
   function updateCurrentDateTime() {
@@ -252,9 +373,9 @@
         applyBranding(settings);
         return;
       } catch {
-        showApiWarning(
-          "Nao foi possivel carregar as configuracoes da empresa na API.",
-        );
+        applyBranding({
+          companyName: "Olympus Admin Inc.",
+        });
         return;
       }
     }
@@ -279,9 +400,6 @@
         if (ordersCountEl) ordersCountEl.textContent = orderStats.total ?? 0;
         return;
       } catch {
-        showApiWarning(
-          "Nao foi possivel atualizar os contadores da barra lateral pela API.",
-        );
         return;
       }
     }
@@ -319,4 +437,7 @@
   setInterval(updateCurrentDateTime, 60000);
   loadBrandingSettings();
   setCurrentUserName();
+  dashboardRetryBtn?.addEventListener("click", () => {
+    loadDashboardMetrics();
+  });
 })();
