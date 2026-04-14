@@ -5,26 +5,38 @@ import { fileURLToPath } from "url";
 import { config } from "../config/config.js";
 import { hashPassword } from "../utils/auth.js";
 import { generateId } from "../utils/helpers.js";
+import { getMysqlPool, initializeMysqlSchema } from "./mysql.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "../../admin-panel.db");
 
-let db = null;
+let sqljsDb = null;
 let SQL = null;
+let driver = config.DATABASE_DRIVER;
 
 async function initializeDatabase() {
-  SQL = await initSqlJs();
-
-  // Tentar carregar BD existente
-  if (fs.existsSync(dbPath)) {
-    const filebuffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(filebuffer);
-  } else {
-    db = new SQL.Database();
+  if (driver === "mysql") {
+    await initializeMysqlSchema();
+    await seedDefaultAdminMysql();
+    console.log("✅ Database initialized successfully (mysql)");
+    return;
   }
 
-  // Criar tabelas
-  db.run(`
+  await initializeSqljsDatabase();
+  console.log("✅ Database initialized successfully (sqljs)");
+}
+
+async function initializeSqljsDatabase() {
+  SQL = await initSqlJs();
+
+  if (fs.existsSync(dbPath)) {
+    const filebuffer = fs.readFileSync(dbPath);
+    sqljsDb = new SQL.Database(filebuffer);
+  } else {
+    sqljsDb = new SQL.Database();
+  }
+
+  sqljsDb.run(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -37,7 +49,7 @@ async function initializeDatabase() {
     );
   `);
 
-  db.run(`
+  sqljsDb.run(`
     CREATE TABLE IF NOT EXISTS orders (
       id TEXT PRIMARY KEY,
       order_id TEXT UNIQUE NOT NULL,
@@ -53,7 +65,7 @@ async function initializeDatabase() {
     );
   `);
 
-  db.run(`
+  sqljsDb.run(`
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -66,7 +78,7 @@ async function initializeDatabase() {
     );
   `);
 
-  db.run(`
+  sqljsDb.run(`
     CREATE TABLE IF NOT EXISTS analytics (
       id TEXT PRIMARY KEY,
       user_id TEXT,
@@ -79,13 +91,11 @@ async function initializeDatabase() {
     );
   `);
 
-  await seedDefaultAdmin();
-
-  console.log("✅ Database initialized successfully");
+  await seedDefaultAdminSqljs();
 }
 
-async function seedDefaultAdmin() {
-  const stmt = db.prepare("SELECT id FROM users WHERE email = ?");
+async function seedDefaultAdminSqljs() {
+  const stmt = sqljsDb.prepare("SELECT id FROM users WHERE email = ?");
   stmt.bind([config.DEFAULT_ADMIN_EMAIL]);
   const hasAdmin = stmt.step();
   stmt.free();
@@ -94,7 +104,7 @@ async function seedDefaultAdmin() {
 
   const password = await hashPassword(config.DEFAULT_ADMIN_PASSWORD);
 
-  db.run(
+  sqljsDb.run(
     `
       INSERT INTO users (id, name, email, password, role, status)
       VALUES (?, ?, ?, ?, 'admin', 'active')
@@ -107,22 +117,50 @@ async function seedDefaultAdmin() {
     ],
   );
 
-  saveDatabase();
+  saveSqljsDatabase();
   console.log(
     `🔐 Default admin created: ${config.DEFAULT_ADMIN_EMAIL} / ${config.DEFAULT_ADMIN_PASSWORD}`,
   );
 }
 
-// Wrapper para interface compatível
-const dbWrapper = {
-  prepare: (sql) => ({
-    run: (...params) => {
-      db.run(sql, params);
-      saveDatabase();
-      return { changes: db.getRowsModified() };
+async function seedDefaultAdminMysql() {
+  const mysqlPool = getMysqlPool();
+  const [rows] = await mysqlPool.execute(
+    "SELECT id FROM users WHERE email = ? LIMIT 1",
+    [config.DEFAULT_ADMIN_EMAIL],
+  );
+
+  if (rows.length > 0) return;
+
+  const password = await hashPassword(config.DEFAULT_ADMIN_PASSWORD);
+
+  await mysqlPool.execute(
+    `
+      INSERT INTO users (id, name, email, password, role, status)
+      VALUES (?, ?, ?, ?, 'admin', 'active')
+    `,
+    [
+      generateId(),
+      config.DEFAULT_ADMIN_NAME,
+      config.DEFAULT_ADMIN_EMAIL,
+      password,
+    ],
+  );
+
+  console.log(
+    `🔐 Default admin created: ${config.DEFAULT_ADMIN_EMAIL} / ${config.DEFAULT_ADMIN_PASSWORD}`,
+  );
+}
+
+function createSqljsStatement(sql) {
+  return {
+    run: async (...params) => {
+      sqljsDb.run(sql, params);
+      saveSqljsDatabase();
+      return { changes: sqljsDb.getRowsModified() };
     },
-    get: (...params) => {
-      const stmt = db.prepare(sql);
+    get: async (...params) => {
+      const stmt = sqljsDb.prepare(sql);
       stmt.bind(params);
       if (stmt.step()) {
         const row = stmt.getAsObject();
@@ -132,8 +170,8 @@ const dbWrapper = {
       stmt.free();
       return null;
     },
-    all: (...params) => {
-      const stmt = db.prepare(sql);
+    all: async (...params) => {
+      const stmt = sqljsDb.prepare(sql);
       stmt.bind(params);
       const result = [];
       while (stmt.step()) {
@@ -142,17 +180,52 @@ const dbWrapper = {
       stmt.free();
       return result;
     },
-  }),
-  exec: (sql) => {
-    db.run(sql);
-    saveDatabase();
+  };
+}
+
+function createMysqlStatement(sql) {
+  return {
+    run: async (...params) => {
+      const mysqlPool = getMysqlPool();
+      const [result] = await mysqlPool.execute(sql, params);
+      return { changes: result.affectedRows || 0 };
+    },
+    get: async (...params) => {
+      const mysqlPool = getMysqlPool();
+      const [rows] = await mysqlPool.execute(sql, params);
+      return rows[0] || null;
+    },
+    all: async (...params) => {
+      const mysqlPool = getMysqlPool();
+      const [rows] = await mysqlPool.execute(sql, params);
+      return rows;
+    },
+  };
+}
+
+const dbWrapper = {
+  prepare: (sql) =>
+    driver === "mysql" ? createMysqlStatement(sql) : createSqljsStatement(sql),
+  exec: async (sql) => {
+    if (driver === "mysql") {
+      const mysqlPool = getMysqlPool();
+      await mysqlPool.query(sql);
+      return;
+    }
+
+    sqljsDb.run(sql);
+    saveSqljsDatabase();
   },
 };
 
-function saveDatabase() {
-  const data = db.export();
+function saveSqljsDatabase() {
+  const data = sqljsDb.export();
   const buffer = Buffer.from(data);
   fs.writeFileSync(dbPath, buffer);
+}
+
+export function getDatabaseDriver() {
+  return driver;
 }
 
 export { initializeDatabase, SQL };

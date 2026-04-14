@@ -23,9 +23,9 @@ export async function register(req, res) {
       VALUES (?, ?, ?, ?, 'user', 'active')
     `);
 
-    stmt.run(id, name, email, hashedPassword);
+    await stmt.run(id, name, email, hashedPassword);
 
-    const user = db
+    const user = await db
       .prepare("SELECT id, name, email, role FROM users WHERE id = ?")
       .get(id);
     const token = createToken(user);
@@ -38,7 +38,10 @@ export async function register(req, res) {
       refreshToken,
     });
   } catch (error) {
-    if (error.message.includes("UNIQUE constraint failed")) {
+    if (
+      error.message.includes("UNIQUE constraint failed") ||
+      error.message.includes("Duplicate entry")
+    ) {
       return res.status(409).json({ error: "Email already registered" });
     }
     res.status(500).json({ error: error.message });
@@ -53,7 +56,7 @@ export async function login(req, res) {
       return res.status(400).json({ error: "Email and password required" });
     }
 
-    const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+    const user = await db.prepare("SELECT * FROM users WHERE email = ?").get(email);
 
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
@@ -94,9 +97,9 @@ export function logout(req, res) {
   res.json({ message: "Logout successful" });
 }
 
-export function getCurrentUser(req, res) {
+export async function getCurrentUser(req, res) {
   try {
-    const user = db
+    const user = await db
       .prepare(
         `
       SELECT id, name, email, role, status, created_at FROM users WHERE id = ?
@@ -124,7 +127,7 @@ export async function refreshToken(req, res) {
 
     // Verificar refresh token (simplificado, sem secret diferente neste caso)
     const decoded = createRefreshToken({ id: req.user.id });
-    const user = db
+    const user = await db
       .prepare("SELECT id, name, email, role FROM users WHERE id = ?")
       .get(req.user.id);
 

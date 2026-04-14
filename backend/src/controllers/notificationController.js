@@ -1,9 +1,9 @@
 import db from "../db/database.js";
 import { generateId } from "../utils/helpers.js";
 
-export function getUserNotifications(req, res) {
+export async function getUserNotifications(req, res) {
   try {
-    const notifications = db
+    const notifications = await db
       .prepare(
         `
       SELECT id, type, title, message, read, created_at
@@ -21,7 +21,7 @@ export function getUserNotifications(req, res) {
   }
 }
 
-export function createNotification(req, res) {
+export async function createNotification(req, res) {
   try {
     const { user_id, type, title, message } = req.body;
 
@@ -36,7 +36,7 @@ export function createNotification(req, res) {
       VALUES (?, ?, ?, ?, ?, 0)
     `);
 
-    stmt.run(id, user_id, type, title, message);
+    await stmt.run(id, user_id, type, title, message);
 
     // Broadcast via Socket.io
     // io.to(user_id).emit('notification', { id, type, title, message });
@@ -47,7 +47,7 @@ export function createNotification(req, res) {
   }
 }
 
-export function markAsRead(req, res) {
+export async function markAsRead(req, res) {
   try {
     const { id } = req.params;
 
@@ -55,7 +55,7 @@ export function markAsRead(req, res) {
       UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?
     `);
 
-    const result = stmt.run(id, req.user.id);
+    const result = await stmt.run(id, req.user.id);
 
     if (result.changes === 0) {
       return res.status(404).json({ error: "Notification not found" });
@@ -67,18 +67,18 @@ export function markAsRead(req, res) {
   }
 }
 
-export function getUnreadCount(req, res) {
+export async function getUnreadCount(req, res) {
   try {
-    const count = db
+    const count = await db
       .prepare(
         `
       SELECT COUNT(*) as count FROM notifications
       WHERE user_id = ? AND read = 0
     `,
-      )
-      .get(req.user.id).count;
+      );
+    const result = await count.get(req.user.id);
 
-    res.json({ unread: count });
+    res.json({ unread: result.count });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

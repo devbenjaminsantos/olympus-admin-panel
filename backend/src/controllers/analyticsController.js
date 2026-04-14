@@ -1,7 +1,7 @@
 import db from "../db/database.js";
 import { generateId } from "../utils/helpers.js";
 
-export function trackAction(req, res) {
+export async function trackAction(req, res) {
   try {
     const { action, resource, details } = req.body;
     const userId = req.user?.id || null;
@@ -18,7 +18,14 @@ export function trackAction(req, res) {
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
-    stmt.run(id, userId, action, resource, JSON.stringify(details), ipAddress);
+    await stmt.run(
+      id,
+      userId,
+      action,
+      resource,
+      JSON.stringify(details),
+      ipAddress,
+    );
 
     res.status(201).json({ message: "Action tracked" });
   } catch (error) {
@@ -26,7 +33,7 @@ export function trackAction(req, res) {
   }
 }
 
-export function getAnalytics(req, res) {
+export async function getAnalytics(req, res) {
   try {
     const { start_date, end_date } = req.query;
 
@@ -45,7 +52,7 @@ export function getAnalytics(req, res) {
 
     query += " ORDER BY created_at DESC LIMIT 1000";
 
-    const analytics = db.prepare(query).all(...params);
+    const analytics = await db.prepare(query).all(...params);
 
     res.json(analytics);
   } catch (error) {
@@ -53,12 +60,13 @@ export function getAnalytics(req, res) {
   }
 }
 
-export function getAnalyticsSummary(req, res) {
+export async function getAnalyticsSummary(req, res) {
   try {
     const summary = {
-      totalActions: db.prepare("SELECT COUNT(*) as count FROM analytics").get()
-        .count,
-      actionsByType: db
+      totalActions: (
+        await db.prepare("SELECT COUNT(*) as count FROM analytics").get()
+      ).count,
+      actionsByType: await db
         .prepare(
           `
         SELECT action, COUNT(*) as count FROM analytics
@@ -66,7 +74,7 @@ export function getAnalyticsSummary(req, res) {
       `,
         )
         .all(),
-      actionsByResource: db
+      actionsByResource: await db
         .prepare(
           `
         SELECT resource, COUNT(*) as count FROM analytics
@@ -74,15 +82,17 @@ export function getAnalyticsSummary(req, res) {
       `,
         )
         .all(),
-      activeUsers: db
+      activeUsers: (
+        await db
         .prepare(
           `
         SELECT COUNT(DISTINCT user_id) as count FROM analytics
         WHERE user_id IS NOT NULL
       `,
         )
-        .get().count,
-      lastActions: db
+        .get()
+      ).count,
+      lastActions: await db
         .prepare(
           `
         SELECT 
@@ -103,9 +113,9 @@ export function getAnalyticsSummary(req, res) {
   }
 }
 
-export function getAuditLog(req, res) {
+export async function getAuditLog(req, res) {
   try {
-    const logs = db
+    const logs = await db
       .prepare(
         `
       SELECT 

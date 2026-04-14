@@ -1,9 +1,9 @@
-import db from "../db/database.js";
+import db, { getDatabaseDriver } from "../db/database.js";
 import { generateId, generateOrderId } from "../utils/helpers.js";
 
-export function getAllOrders(req, res) {
+export async function getAllOrders(req, res) {
   try {
-    const orders = db
+    const orders = await db
       .prepare(
         `
       SELECT 
@@ -21,10 +21,10 @@ export function getAllOrders(req, res) {
   }
 }
 
-export function getOrderById(req, res) {
+export async function getOrderById(req, res) {
   try {
     const { id } = req.params;
-    const order = db
+    const order = await db
       .prepare(
         `
       SELECT 
@@ -47,7 +47,7 @@ export function getOrderById(req, res) {
   }
 }
 
-export function createOrder(req, res) {
+export async function createOrder(req, res) {
   try {
     const { customer_id, product, quantity, date, total } = req.body;
 
@@ -63,21 +63,21 @@ export function createOrder(req, res) {
       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
     `);
 
-    stmt.run(id, orderId, customer_id, product, quantity, date, total);
+    await stmt.run(id, orderId, customer_id, product, quantity, date, total);
 
-    const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
+    const order = await db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
     res.status(201).json({ message: "Order created", order });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 }
 
-export function updateOrder(req, res) {
+export async function updateOrder(req, res) {
   try {
     const { id } = req.params;
     const { product, quantity, date, status, total } = req.body;
 
-    const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
+    const order = await db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -93,7 +93,7 @@ export function updateOrder(req, res) {
       WHERE id = ?
     `);
 
-    stmt.run(
+    await stmt.run(
       product || order.product,
       quantity || order.quantity,
       date || order.date,
@@ -102,19 +102,19 @@ export function updateOrder(req, res) {
       id,
     );
 
-    const updated = db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
+    const updated = await db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
     res.json({ message: "Order updated", order: updated });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 }
 
-export function deleteOrder(req, res) {
+export async function deleteOrder(req, res) {
   try {
     const { id } = req.params;
 
     const stmt = db.prepare("DELETE FROM orders WHERE id = ?");
-    const result = stmt.run(id);
+    const result = await stmt.run(id);
 
     if (result.changes === 0) {
       return res.status(404).json({ error: "Order not found" });
@@ -126,28 +126,21 @@ export function deleteOrder(req, res) {
   }
 }
 
-export function getOrderStats(req, res) {
+export async function getOrderStats(req, res) {
   try {
-    const stats = {
-      total: db.prepare("SELECT COUNT(*) as count FROM orders").get().count,
-      totalRevenue:
-        db.prepare("SELECT SUM(total) as total FROM orders").get().total || 0,
-      pending: db
-        .prepare(
-          "SELECT COUNT(*) as count FROM orders WHERE status = 'pending'",
-        )
-        .get().count,
-      paid: db
-        .prepare("SELECT COUNT(*) as count FROM orders WHERE status = 'paid'")
-        .get().count,
-      cancelled: db
-        .prepare(
-          "SELECT COUNT(*) as count FROM orders WHERE status = 'cancelled'",
-        )
-        .get().count,
-      byMonth: db
-        .prepare(
-          `
+    const byMonthQuery =
+      getDatabaseDriver() === "mysql"
+        ? `
+        SELECT 
+          DATE_FORMAT(date, '%Y-%m') as month,
+          COUNT(*) as orders,
+          SUM(total) as revenue
+        FROM orders
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT 12
+      `
+        : `
         SELECT 
           strftime('%Y-%m', date) as month,
           COUNT(*) as orders,
@@ -156,9 +149,34 @@ export function getOrderStats(req, res) {
         GROUP BY month
         ORDER BY month DESC
         LIMIT 12
-      `,
+      `;
+
+    const stats = {
+      total: (await db.prepare("SELECT COUNT(*) as count FROM orders").get())
+        .count,
+      totalRevenue: (
+        await db.prepare("SELECT SUM(total) as total FROM orders").get()
+      ).total || 0,
+      pending: (
+        await db
+        .prepare(
+          "SELECT COUNT(*) as count FROM orders WHERE status = 'pending'",
         )
-        .all(),
+        .get()
+      ).count,
+      paid: (
+        await db
+        .prepare("SELECT COUNT(*) as count FROM orders WHERE status = 'paid'")
+        .get()
+      ).count,
+      cancelled: (
+        await db
+        .prepare(
+          "SELECT COUNT(*) as count FROM orders WHERE status = 'cancelled'",
+        )
+        .get()
+      ).count,
+      byMonth: await db.prepare(byMonthQuery).all(),
     };
 
     res.json(stats);
