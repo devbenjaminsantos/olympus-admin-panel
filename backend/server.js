@@ -10,6 +10,7 @@ import userRoutes from "./src/routes/userRoutes.js";
 import orderRoutes from "./src/routes/orderRoutes.js";
 import notificationRoutes from "./src/routes/notificationRoutes.js";
 import analyticsRoutes from "./src/routes/analyticsRoutes.js";
+import settingsRoutes from "./src/routes/settingsRoutes.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -43,6 +44,7 @@ async function start() {
   app.use("/api/orders", orderRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/analytics", analyticsRoutes);
+  app.use("/api/settings", settingsRoutes);
 
   // Socket.io para notificações em tempo real
   io.on("connection", (socket) => {

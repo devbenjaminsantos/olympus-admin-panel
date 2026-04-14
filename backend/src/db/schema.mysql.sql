@@ -53,3 +53,15 @@ CREATE TABLE IF NOT EXISTS analytics (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+  id VARCHAR(32) PRIMARY KEY,
+  company_name VARCHAR(160) NOT NULL,
+  support_email VARCHAR(160) NOT NULL,
+  default_role ENUM('admin', 'manager', 'user') NOT NULL DEFAULT 'user',
+  dashboard_view VARCHAR(40) NOT NULL DEFAULT 'overview',
+  email_notifications TINYINT(1) NOT NULL DEFAULT 1,
+  weekly_reports TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

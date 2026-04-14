@@ -93,19 +93,19 @@
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
 <div>
 <h5 class="mb-1">Orders Table</h5>
-<p class="text-body-secondary mb-0">Advanced table powered by jQuery + DataTables.</p>
+<p class="text-body-secondary mb-0">Operational orders synchronized with the API.</p>
 </div>
 
 <div class="d-flex align-items-center gap-2 flex-wrap">
 <select id="statusFilter" class="form-select" style="min-width: 180px;">
 <option value="">All Status</option>
-<option value="Paid">Paid</option>
-<option value="Pending">Pending</option>
-<option value="Cancelled">Cancelled</option>
+<option value="paid">Paid</option>
+<option value="pending">Pending</option>
+<option value="cancelled">Cancelled</option>
 </select>
 
 <button id="exportOrderCSV" class="btn btn-outline-primary" type="button">Export CSV</button>
-<button id="resetOrdersDemo" class="btn btn-outline-danger" type="button">Restore Demo</button>
+<button id="resetOrdersDemo" class="btn btn-outline-danger" type="button">Sync orders</button>
 <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#orderModal">+ New Order</button>
 
 </div>
@@ -284,14 +284,16 @@
   <div class="modal-body">
     <div class="mb-3">
       <label for="orderId" class="form-label">Order ID</label>
-      <input type="text" id="orderId" class="form-control" required placeholder="#1011">
-      <div class="invalid-feedback">Please enter an order ID.</div>
+      <input type="text" id="orderId" class="form-control" readonly placeholder="Generated automatically">
+      <div class="form-text">Generated automatically when the order is created.</div>
     </div>
 
     <div class="mb-3">
       <label for="customer" class="form-label">Customer</label>
-      <input type="text" id="customer" class="form-control" required placeholder="Customer name">
-      <div class="invalid-feedback">Please enter a customer name.</div>
+      <select id="customer" class="form-select" required>
+        <option value="">Select a customer</option>
+      </select>
+      <div class="invalid-feedback">Please select a customer.</div>
     </div>
 
     <div class="mb-3">
@@ -317,9 +319,9 @@
         <label for="status" class="form-label">Status</label>
         <select id="status" class="form-select" required>
           <option value="">Select status</option>
-          <option>Paid</option>
-          <option>Pending</option>
-          <option>Cancelled</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+          <option value="cancelled">Cancelled</option>
         </select>
         <div class="invalid-feedback">Please select a status.</div>
       </div>

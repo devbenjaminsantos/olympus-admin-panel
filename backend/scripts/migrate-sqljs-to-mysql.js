@@ -42,6 +42,7 @@ async function main() {
   const orders = loadRows(sourceDb, "SELECT * FROM orders");
   const notifications = loadRows(sourceDb, "SELECT * FROM notifications");
   const analytics = loadRows(sourceDb, "SELECT * FROM analytics");
+  const settingsRows = loadRows(sourceDb, "SELECT * FROM settings");
 
   const connection = await mysqlPool.getConnection();
 
@@ -156,6 +157,38 @@ async function main() {
       );
     }
 
+    for (const settings of settingsRows) {
+      await connection.execute(
+        `
+          INSERT INTO settings (
+            id, company_name, support_email, default_role, dashboard_view,
+            email_notifications, weekly_reports, created_at, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            company_name = VALUES(company_name),
+            support_email = VALUES(support_email),
+            default_role = VALUES(default_role),
+            dashboard_view = VALUES(dashboard_view),
+            email_notifications = VALUES(email_notifications),
+            weekly_reports = VALUES(weekly_reports),
+            created_at = VALUES(created_at),
+            updated_at = VALUES(updated_at)
+        `,
+        [
+          settings.id,
+          settings.company_name,
+          settings.support_email,
+          settings.default_role,
+          settings.dashboard_view,
+          settings.email_notifications,
+          settings.weekly_reports,
+          settings.created_at,
+          settings.updated_at,
+        ],
+      );
+    }
+
     await connection.commit();
 
     console.log(`✅ Migration completed from ${sourcePath}`);
@@ -163,6 +196,7 @@ async function main() {
     console.log(`📦 Orders: ${orders.length}`);
     console.log(`🔔 Notifications: ${notifications.length}`);
     console.log(`📊 Analytics: ${analytics.length}`);
+    console.log(`⚙️ Settings rows: ${settingsRows.length}`);
   } catch (error) {
     await connection.rollback();
     throw error;

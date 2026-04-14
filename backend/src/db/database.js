@@ -18,6 +18,7 @@ async function initializeDatabase() {
   if (driver === "mysql") {
     await initializeMysqlSchema();
     await seedDefaultAdminMysql();
+    await seedDefaultSettingsMysql();
     console.log("✅ Database initialized successfully (mysql)");
     return;
   }
@@ -91,7 +92,22 @@ async function initializeSqljsDatabase() {
     );
   `);
 
+  sqljsDb.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id TEXT PRIMARY KEY,
+      company_name TEXT NOT NULL,
+      support_email TEXT NOT NULL,
+      default_role TEXT DEFAULT 'user' CHECK(default_role IN ('admin', 'manager', 'user')),
+      dashboard_view TEXT DEFAULT 'overview',
+      email_notifications INTEGER DEFAULT 1,
+      weekly_reports INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   await seedDefaultAdminSqljs();
+  await seedDefaultSettingsSqljs();
 }
 
 async function seedDefaultAdminSqljs() {
@@ -149,6 +165,65 @@ async function seedDefaultAdminMysql() {
 
   console.log(
     `🔐 Default admin created: ${config.DEFAULT_ADMIN_EMAIL} / ${config.DEFAULT_ADMIN_PASSWORD}`,
+  );
+}
+
+async function seedDefaultSettingsSqljs() {
+  const stmt = sqljsDb.prepare("SELECT id FROM settings WHERE id = ?");
+  stmt.bind(["global"]);
+  const hasSettings = stmt.step();
+  stmt.free();
+
+  if (hasSettings) return;
+
+  sqljsDb.run(
+    `
+      INSERT INTO settings (
+        id, company_name, support_email, default_role, dashboard_view,
+        email_notifications, weekly_reports
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      "global",
+      "Olympus Admin Inc.",
+      "support@example.com",
+      "user",
+      "overview",
+      1,
+      0,
+    ],
+  );
+
+  saveSqljsDatabase();
+}
+
+async function seedDefaultSettingsMysql() {
+  const mysqlPool = getMysqlPool();
+  const [rows] = await mysqlPool.execute(
+    "SELECT id FROM settings WHERE id = ? LIMIT 1",
+    ["global"],
+  );
+
+  if (rows.length > 0) return;
+
+  await mysqlPool.execute(
+    `
+      INSERT INTO settings (
+        id, company_name, support_email, default_role, dashboard_view,
+        email_notifications, weekly_reports
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      "global",
+      "Olympus Admin Inc.",
+      "support@example.com",
+      "user",
+      "overview",
+      1,
+      0,
+    ],
   );
 }
 

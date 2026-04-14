@@ -1,10 +1,10 @@
 (function () {
-  const STORAGE_KEY = "olympus_settings";
+  const api = window.OlympusAPI;
 
   const defaults = {
     companyName: "Olympus Admin Inc.",
     supportEmail: "support@example.com",
-    defaultRole: "viewer",
+    defaultRole: "user",
     dashboardView: "overview",
     emailNotifications: true,
     weeklyReports: false,
@@ -18,21 +18,6 @@
   const emailNotifications = document.getElementById("emailNotifications");
   const weeklyReports = document.getElementById("weeklyReports");
   const resetBtn = document.getElementById("resetSettings");
-
-  function loadSettings() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return defaults;
-
-    try {
-      return { ...defaults, ...JSON.parse(saved) };
-    } catch {
-      return defaults;
-    }
-  }
-
-  function saveSettings(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }
 
   function fillForm(data) {
     companyName.value = data.companyName;
@@ -51,10 +36,8 @@
     toast.show();
   }
 
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    const data = {
+  function getPayload() {
+    return {
       companyName: companyName.value.trim(),
       supportEmail: supportEmail.value.trim(),
       defaultRole: defaultRole.value,
@@ -62,16 +45,45 @@
       emailNotifications: emailNotifications.checked,
       weeklyReports: weeklyReports.checked,
     };
+  }
 
-    saveSettings(data);
-    showToast("Settings saved successfully.");
+  async function loadSettings() {
+    if (!api) return defaults;
+
+    try {
+      const settings = await api.request("/settings");
+      return { ...defaults, ...settings };
+    } catch {
+      return defaults;
+    }
+  }
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    try {
+      const data = getPayload();
+      await api.request("/settings", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      showToast("Settings saved successfully.");
+    } catch (error) {
+      showToast(error.message || "Unable to save settings.");
+    }
   });
 
-  resetBtn.addEventListener("click", function () {
-    saveSettings(defaults);
-    fillForm(defaults);
-    showToast("Default settings restored.");
+  resetBtn.addEventListener("click", async function () {
+    try {
+      const response = await api.request("/settings/reset", {
+        method: "POST",
+      });
+      fillForm({ ...defaults, ...response.settings });
+      showToast("Default settings restored.");
+    } catch (error) {
+      showToast(error.message || "Unable to restore settings.");
+    }
   });
 
-  fillForm(loadSettings());
+  loadSettings().then(fillForm);
 })();

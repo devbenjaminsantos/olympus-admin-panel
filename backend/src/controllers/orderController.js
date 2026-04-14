@@ -49,21 +49,32 @@ export async function getOrderById(req, res) {
 
 export async function createOrder(req, res) {
   try {
-    const { customer_id, product, quantity, date, total } = req.body;
+    const { customer_id, product, quantity, date, total, status, order_id } =
+      req.body;
 
     if (!customer_id || !product || !quantity || !date || !total) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     const id = generateId();
-    const orderId = generateOrderId();
+    const orderId = order_id || generateOrderId();
+    const normalizedStatus = status || "pending";
 
     const stmt = db.prepare(`
       INSERT INTO orders (id, order_id, customer_id, product, quantity, date, status, total)
-      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    await stmt.run(id, orderId, customer_id, product, quantity, date, total);
+    await stmt.run(
+      id,
+      orderId,
+      customer_id,
+      product,
+      quantity,
+      date,
+      normalizedStatus,
+      total,
+    );
 
     const order = await db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
     res.status(201).json({ message: "Order created", order });

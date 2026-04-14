@@ -1,7 +1,7 @@
 $(document).ready(function () {
-  const STORAGE_KEY = "olympus_orders";
-
-  let editingRow = null;
+  const api = window.OlympusAPI;
+  let customers = [];
+  let orders = [];
   let editingId = null;
 
   const table = $("#ordersTable").DataTable({
@@ -10,8 +10,8 @@ $(document).ready(function () {
     order: [[3, "desc"]],
     language: {
       search: "Search:",
-      lengthMenu: "Show *MENU* orders",
-      info: "Showing *START* to *END* of *TOTAL* orders",
+      lengthMenu: "Show _MENU_ orders",
+      info: "Showing _START_ to _END_ of _TOTAL_ orders",
       paginate: {
         previous: "Prev",
         next: "Next",
@@ -19,133 +19,32 @@ $(document).ready(function () {
     },
   });
 
-  function getDefaultOrders() {
-    return [
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1001",
-        customer: "Ava Johnson",
-        product: "Premium Plan",
-        date: "2026-03-01",
-        status: "Paid",
-        total: 120.0,
-      },
-      {
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1002",
-        customer: "Noah Smith",
-        product: "Business Plan",
-        date: "2026-03-02",
-        status: "Pending",
-        total: 250.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1003",
-        customer: "Mia Brown",
-        product: "Starter Plan",
-        date: "2026-03-03",
-        status: "Cancelled",
-        total: 80.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1004",
-        customer: "Liam Davis",
-        product: "Enterprise Plan",
-        date: "2026-03-04",
-        status: "Paid",
-        total: 540.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1005",
-        customer: "Sophia Miller",
-        product: "Premium Plan",
-        date: "2026-03-05",
-        status: "Pending",
-        total: 120.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1006",
-        customer: "Ethan Wilson",
-        product: "Starter Plan",
-        date: "2026-03-05",
-        status: "Paid",
-        total: 80.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1007",
-        customer: "Isabella Moore",
-        product: "Business Plan",
-        date: "2026-03-06",
-        status: "Cancelled",
-        total: 250.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1008",
-        customer: "Lucas Taylor",
-        product: "Enterprise Plan",
-        date: "2026-03-07",
-        status: "Paid",
-        total: 540.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1009",
-        customer: "Emma White",
-        product: "Premium Plan",
-        date: "2026-03-07",
-        status: "Pending",
-        total: 120.0,
-      },
-      {
-        id: crypto.randomUUID() ? crypto.randomUUID() : Date.now().toString(),
-        orderId: "#1010",
-        customer: "James Harris",
-        product: "Starter Plan",
-        date: "2026-03-08",
-        status: "Paid",
-        total: 80.0,
-      },
-    ];
+  function showToast(message) {
+    $("#ordersToastBody").text(message);
+    const toastElement = document.getElementById("ordersToast");
+    const toast = bootstrap.Toast.getOrCreateInstance(toastElement);
+    toast.show();
   }
 
-  function loadOrders() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (!saved) {
-      const defaults = getDefaultOrders();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-      return defaults;
-    }
-
-    try {
-      return JSON.parse(saved);
-    } catch {
-      const defaults = getDefaultOrders();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-      return defaults;
-    }
+  function showError(error) {
+    showToast(error?.message || "Unexpected error.");
   }
 
-  function saveOrders(orders) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-  }
-
-  function getOrders() {
-    return loadOrders();
+  function formatStatusLabel(status) {
+    const labels = {
+      paid: "Paid",
+      pending: "Pending",
+      cancelled: "Cancelled",
+    };
+    return labels[status] || status;
   }
 
   function getStatusBadge(status) {
-    if (status === "Paid") {
+    if (status === "paid") {
       return `<span class="badge text-bg-success">Paid</span>`;
     }
 
-    if (status === "Pending") {
+    if (status === "pending") {
       return `<span class="badge text-bg-warning">Pending</span>`;
     }
 
@@ -154,10 +53,50 @@ $(document).ready(function () {
 
   function getActionButtons() {
     return `
-    <div class="d-flex gap-2">         
-    <button class="btn btn-sm btn-outline-primary edit-order">Edit</button>         
-    <button class="btn btn-sm btn-outline-danger delete-order">Delete</button>      
-     </div>`;
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-primary edit-order">Edit</button>
+        <button class="btn btn-sm btn-outline-danger delete-order">Delete</button>
+      </div>
+    `;
+  }
+
+  function normalizeOrder(order) {
+    return {
+      id: order.id,
+      orderId: order.order_id,
+      customerId: order.customer_id,
+      customer: order.customer || "Unknown user",
+      product: order.product,
+      quantity: Number(order.quantity || 1),
+      date: order.date,
+      status: order.status,
+      total: Number(order.total || 0),
+    };
+  }
+
+  function renderCustomerOptions() {
+    const select = document.getElementById("customer");
+    if (!select) return;
+
+    const currentValue = select.value;
+    select.innerHTML = `<option value="">Select a customer</option>`;
+
+    customers.forEach((customer) => {
+      const option = document.createElement("option");
+      option.value = customer.id;
+      option.textContent = `${customer.name} (${customer.email})`;
+      select.appendChild(option);
+    });
+
+    if (currentValue) {
+      select.value = currentValue;
+    }
+  }
+
+  async function loadCustomers() {
+    const users = await api.request("/users");
+    customers = users.filter((user) => user.status === "active");
+    renderCustomerOptions();
   }
 
   function formatRow(order) {
@@ -172,9 +111,12 @@ $(document).ready(function () {
     ];
   }
 
-  function renderOrders() {
-    const orders = getOrders();
+  async function loadOrders() {
+    const response = await api.request("/orders");
+    orders = response.map(normalizeOrder);
+  }
 
+  function renderOrders() {
     table.clear();
 
     orders.forEach((order) => {
@@ -185,29 +127,26 @@ $(document).ready(function () {
     table.order([3, "desc"]).draw();
   }
 
+  function findOrderById(id) {
+    return orders.find((order) => order.id === id);
+  }
+
   function resetForm() {
     const form = document.getElementById("orderForm");
     form.reset();
     form.classList.remove("was-validated");
-    editingRow = null;
     editingId = null;
     $("#orderModalLabel").text("New Order");
+    $("#orderId").val("");
   }
 
-  function findOrderById(id) {
-    return getOrders().find((order) => order.id === id);
+  async function syncOrders() {
+    await loadCustomers();
+    await loadOrders();
+    renderOrders();
   }
 
-  function showToast(message) {
-    $("#ordersToastBody").text(message);
-    const toastElement = document.getElementById("ordersToast");
-    const toast = bootstrap.Toast.getOrCreateInstance(toastElement);
-    toast.show();
-  }
-
-  function exportOrdersCSV() {
-    const orders = getOrders();
-
+  async function exportOrdersCSV() {
     if (!orders.length) {
       showToast("No orders to export.");
       return;
@@ -217,6 +156,7 @@ $(document).ready(function () {
       "Order ID",
       "Customer",
       "Product",
+      "Quantity",
       "Date",
       "Status",
       "Total",
@@ -226,25 +166,26 @@ $(document).ready(function () {
       order.orderId,
       order.customer,
       order.product,
+      order.quantity,
       order.date,
-      order.status,
+      formatStatusLabel(order.status),
       order.total,
     ]);
 
     const csvContent = [
       headers.join(","),
-      ...rows.map((row) => row.join(",")),
+      ...rows.map((row) => row.map((item) => JSON.stringify(item)).join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", "orders.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     showToast("Orders exported successfully.");
   }
@@ -255,141 +196,154 @@ $(document).ready(function () {
       .on("change", function () {
         const value = $(this).val();
         if (value) {
-          table.column(4).search(value).draw();
+          table.column(4).search(formatStatusLabel(value)).draw();
         } else {
           table.column(4).search("").draw();
         }
       });
   }
 
-  renderOrders();
-  updateStatusFilter();
+  async function createOrder(payload) {
+    await api.request("/orders", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
 
-  $("#orderForm").on("submit", function (e) {
-    e.preventDefault();
+  async function updateOrder(id, payload) {
+    await api.request(`/orders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
 
-    const form = this;
+  async function deleteOrder(id) {
+    await api.request(`/orders/${id}`, {
+      method: "DELETE",
+    });
+  }
 
-    if (!form.checkValidity()) {
-      form.classList.add("was-validated");
-      return;
-    }
-
-    const orderId = $("#orderId").val().trim();
-    const customer = $("#customer").val().trim();
-    const product = $("#product").val();
-    const date = $("#date").val();
-    const status = $("#status").val();
-    const total = parseFloat($("#total").val()).toFixed(2);
-
-    const orders = getOrders();
-
-    if (editingId) {
-      const updatedOrders = orders.map((order) =>
-        order.id === editingId
-          ? {
-              ...order,
-              orderId,
-              customer,
-              product,
-              date,
-              status,
-              total: Number(total),
-            }
-          : order,
-      );
-
-      saveOrders(updatedOrders);
-      renderOrders();
-      showToast("Order updated successfully.");
-    } else {
-      const newOrder = {
-        id: crypto.randomUUID(),
-        orderId,
-        customer,
-        product,
-        date,
-        status,
-        total: Number(total),
-      };
-
-      orders.push(newOrder);
-      saveOrders(orders);
-      renderOrders();
-      showToast("Order created successfully.");
-    }
-
-    resetForm();
-
-    const modalEl = document.getElementById("orderModal");
-    const modalInstance = bootstrap.Modal.getInstance(modalEl);
-    modalInstance.hide();
-  });
-
-  $("#ordersTable tbody").on("click", ".delete-order", function () {
-    const row = $(this).closest("tr");
-    const id = row.attr("data-id");
-
-    if (!id) return;
-
-    $("#confirmDeleteModal").attr("data-id", id);
-    const confirmModal = new bootstrap.Modal(
-      document.getElementById("confirmDeleteModal"),
-    );
-    confirmModal.show();
-  });
-
-  $("#confirmDeleteBtn").on("click", function () {
-    const modalEl = document.getElementById("confirmDeleteModal");
-    const id = $("#confirmDeleteModal").attr("data-id");
-
-    if (!id) return;
-
-    const orders = getOrders().filter((order) => order.id !== id);
-    saveOrders(orders);
-    renderOrders();
-    showToast("Order deleted successfully.");
-
-    const confirmModal = bootstrap.Modal.getInstance(modalEl);
-    confirmModal.hide();
-  });
-
-  $("#ordersTable tbody").on("click", ".edit-order", function () {
-    const row = $(this).closest("tr");
-    const id = row.attr("data-id");
-
-    if (!id) return;
-
-    const order = findOrderById(id);
-    if (!order) return;
-
-    editingRow = row;
-    editingId = id;
-
+  function openEditModal(order) {
+    editingId = order.id;
+    $("#orderModalLabel").text("Edit Order");
     $("#orderId").val(order.orderId);
-    $("#customer").val(order.customer);
+    $("#customer").val(order.customerId);
     $("#product").val(order.product);
     $("#date").val(order.date);
     $("#status").val(order.status);
     $("#total").val(order.total);
-
-    $("#orderModalLabel").text("Edit Order");
-
     const modal = new bootstrap.Modal(document.getElementById("orderModal"));
     modal.show();
-  });
+  }
 
-  $("#orderModal").on("hidden.bs.modal", function () {
-    resetForm();
-  });
+  function bindEvents() {
+    $("#orderForm").on("submit", async function (event) {
+      event.preventDefault();
 
-  $("#resetOrdersDemo").on("click", function () {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(getDefaultOrders()));
-    renderOrders();
-    showToast("Sample orders restored.");
-  });
+      const form = this;
+      if (!form.checkValidity()) {
+        form.classList.add("was-validated");
+        return;
+      }
 
-  $("#exportOrderCSV").on("click", function () {
-    exportOrdersCSV();
-  });
+      const payload = {
+        customer_id: $("#customer").val(),
+        product: $("#product").val(),
+        quantity: 1,
+        date: $("#date").val(),
+        status: $("#status").val(),
+        total: Number(parseFloat($("#total").val()).toFixed(2)),
+      };
+
+      try {
+        if (editingId) {
+          await updateOrder(editingId, payload);
+          showToast("Order updated successfully.");
+        } else {
+          await createOrder(payload);
+          showToast("Order created successfully.");
+        }
+
+        await syncOrders();
+        resetForm();
+
+        const modalEl = document.getElementById("orderModal");
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        modalInstance?.hide();
+      } catch (error) {
+        showError(error);
+      }
+    });
+
+    $("#ordersTable tbody").on("click", ".delete-order", function () {
+      const row = $(this).closest("tr");
+      const id = row.attr("data-id");
+
+      if (!id) return;
+
+      $("#confirmDeleteModal").attr("data-id", id);
+      const confirmModal = new bootstrap.Modal(
+        document.getElementById("confirmDeleteModal"),
+      );
+      confirmModal.show();
+    });
+
+    $("#confirmDeleteBtn").on("click", async function () {
+      const modalEl = document.getElementById("confirmDeleteModal");
+      const id = $("#confirmDeleteModal").attr("data-id");
+
+      if (!id) return;
+
+      try {
+        await deleteOrder(id);
+        await syncOrders();
+        showToast("Order deleted successfully.");
+        const confirmModal = bootstrap.Modal.getInstance(modalEl);
+        confirmModal?.hide();
+      } catch (error) {
+        showError(error);
+      }
+    });
+
+    $("#ordersTable tbody").on("click", ".edit-order", function () {
+      const row = $(this).closest("tr");
+      const id = row.attr("data-id");
+      const order = findOrderById(id);
+      if (!order) return;
+
+      openEditModal(order);
+    });
+
+    $("#orderModal").on("hidden.bs.modal", function () {
+      resetForm();
+    });
+
+    $("#resetOrdersDemo").on("click", async function () {
+      try {
+        await syncOrders();
+        showToast("Orders synchronized from API.");
+      } catch (error) {
+        showError(error);
+      }
+    });
+
+    $("#exportOrderCSV").on("click", function () {
+      exportOrdersCSV();
+    });
+  }
+
+  async function init() {
+    if (!api) return;
+
+    updateStatusFilter();
+    bindEvents();
+
+    try {
+      await syncOrders();
+    } catch (error) {
+      showError(error);
+    }
+  }
+
+  init();
 });

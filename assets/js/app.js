@@ -196,29 +196,7 @@
     dateTimeEl.textContent = formatted;
   }
 
-  function loadStoredSettings() {
-    const raw = localStorage.getItem("olympus_settings");
-
-    if (!raw) {
-      return {
-        companyName: "Olympus Admin Inc.",
-      };
-    }
-
-    try {
-      const parsed = JSON.parse(raw);
-      return {
-        companyName: parsed.companyName || "Olympus Admin Inc.",
-      };
-    } catch {
-      return {
-        companyName: "Olympus Admin Inc.",
-      };
-    }
-  }
-
-  function applyBranding() {
-    const settings = loadStoredSettings();
+  function applyBranding(settings) {
     const companyName = settings.companyName || "Olympus Admin Inc.";
 
     const brandNameEls = document.querySelectorAll("[data-brand-name]");
@@ -237,6 +215,22 @@
       if (!document.title.includes("•")) return;
       const currentSection = document.title.split("•")[0].trim();
       document.title = `${currentSection} • ${companyName}`;
+    });
+  }
+
+  async function loadBrandingSettings() {
+    if (api?.getToken?.()) {
+      try {
+        const settings = await api.request("/settings");
+        applyBranding(settings);
+        return;
+      } catch {
+        // Fallback local while migration completes.
+      }
+    }
+
+    applyBranding({
+      companyName: "Olympus Admin Inc.",
     });
   }
 
@@ -290,6 +284,6 @@
   updateSidebarCounts();
   updateCurrentDateTime();
   setInterval(updateCurrentDateTime, 60000);
-  applyBranding();
+  loadBrandingSettings();
   setCurrentUserName();
 })();
