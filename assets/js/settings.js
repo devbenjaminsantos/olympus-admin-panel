@@ -18,6 +18,11 @@
   const emailNotifications = document.getElementById("emailNotifications");
   const weeklyReports = document.getElementById("weeklyReports");
   const resetBtn = document.getElementById("resetSettings");
+  const submitBtn = form?.querySelector('button[type="submit"]');
+  const statusEl = document.getElementById("settingsStatus");
+  const statusTitleEl = document.getElementById("settingsStatusTitle");
+  const statusMessageEl = document.getElementById("settingsStatusMessage");
+  const retryBtn = document.getElementById("settingsRetryBtn");
 
   function fillForm(data) {
     companyName.value = data.companyName;
@@ -34,6 +39,29 @@
       document.getElementById("settingsToast"),
     );
     toast.show();
+  }
+
+  function setSavingState(saving) {
+    if (submitBtn) submitBtn.disabled = saving;
+    if (resetBtn) resetBtn.disabled = saving;
+  }
+
+  function updateStatusCard(variant, title, message, showRetry = false) {
+    if (!statusEl || !statusTitleEl || !statusMessageEl) return;
+
+    statusEl.className = "panel-status is-visible";
+    if (variant === "loading") {
+      statusEl.classList.add("is-loading");
+    }
+
+    statusTitleEl.textContent = title;
+    statusMessageEl.textContent = message;
+    retryBtn?.classList.toggle("d-none", !showRetry);
+  }
+
+  function hideStatusCard() {
+    if (!statusEl) return;
+    statusEl.className = "panel-status";
   }
 
   function getPayload() {
@@ -59,9 +87,21 @@
     if (!api) return defaults;
 
     try {
+      updateStatusCard(
+        "loading",
+        "Loading settings",
+        "Fetching the current workspace configuration.",
+      );
       const settings = await api.request("/settings");
+      hideStatusCard();
       return { ...defaults, ...settings };
-    } catch {
+    } catch (error) {
+      updateStatusCard(
+        "error",
+        "Unable to load settings",
+        error?.message || "The API did not respond as expected.",
+        true,
+      );
       return defaults;
     }
   }
@@ -70,29 +110,53 @@
     e.preventDefault();
 
     try {
+      setSavingState(true);
       const data = getPayload();
       await api.request("/settings", {
         method: "PUT",
         body: JSON.stringify(data),
       });
       notifySettingsChanged(data);
+      hideStatusCard();
       showToast("Settings saved successfully.");
     } catch (error) {
+      updateStatusCard(
+        "error",
+        "Unable to save settings",
+        error.message || "The API did not respond as expected.",
+        true,
+      );
       showToast(error.message || "Unable to save settings.");
+    } finally {
+      setSavingState(false);
     }
   });
 
   resetBtn.addEventListener("click", async function () {
     try {
+      setSavingState(true);
       const response = await api.request("/settings/reset", {
         method: "POST",
       });
       fillForm({ ...defaults, ...response.settings });
       notifySettingsChanged(response.settings);
+      hideStatusCard();
       showToast("Default settings restored.");
     } catch (error) {
+      updateStatusCard(
+        "error",
+        "Unable to restore settings",
+        error.message || "The API did not respond as expected.",
+        true,
+      );
       showToast(error.message || "Unable to restore settings.");
+    } finally {
+      setSavingState(false);
     }
+  });
+
+  retryBtn?.addEventListener("click", () => {
+    loadSettings().then(fillForm);
   });
 
   loadSettings().then(fillForm);

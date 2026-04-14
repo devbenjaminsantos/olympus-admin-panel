@@ -96,6 +96,22 @@
           <section class="p-3 p-md-4">
             <div class="card shadow-sm">
               <div class="card-body">
+                <div id="settingsStatus" class="panel-status" aria-live="polite">
+                  <div class="panel-status-copy">
+                    <strong id="settingsStatusTitle">Loading settings</strong>
+                    <span id="settingsStatusMessage"
+                      >Fetching the current workspace configuration.</span
+                    >
+                  </div>
+                  <button
+                    id="settingsRetryBtn"
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary d-none"
+                  >
+                    Retry
+                  </button>
+                </div>
+
                 <form id="settingsForm" class="row g-3">
                   <div class="col-md-6">
                     <label for="companyName" class="form-label"

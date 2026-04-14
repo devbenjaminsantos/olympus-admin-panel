@@ -50,3 +50,38 @@ body {
   font-size: 0.7rem;
   border-radius: 999px;
 }
+
+.panel-status {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--bs-body-bg) 92%, var(--bs-primary) 8%);
+}
+
+.panel-status.is-visible {
+  display: flex;
+}
+
+.panel-status.is-loading {
+  border-style: solid;
+}
+
+.panel-status-copy {
+  color: var(--bs-body-color);
+  font-size: 0.95rem;
+}
+
+.panel-status-copy strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.panel-status-copy span {
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+}

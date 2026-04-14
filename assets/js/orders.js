@@ -3,6 +3,13 @@ $(document).ready(function () {
   let customers = [];
   let orders = [];
   let editingId = null;
+  let isLoading = false;
+  const statusEl = document.getElementById("ordersStatus");
+  const statusTitleEl = document.getElementById("ordersStatusTitle");
+  const statusMessageEl = document.getElementById("ordersStatusMessage");
+  const retryBtn = document.getElementById("ordersRetryBtn");
+  const syncBtn = document.getElementById("resetOrdersDemo");
+  const exportBtn = document.getElementById("exportOrderCSV");
 
   const table = $("#ordersTable").DataTable({
     pageLength: 5,
@@ -28,6 +35,31 @@ $(document).ready(function () {
 
   function showError(error) {
     showToast(error?.message || "Unexpected error.");
+  }
+
+  function setLoadingState(loading) {
+    isLoading = loading;
+    [syncBtn, exportBtn, $("#statusFilter")[0]].forEach((element) => {
+      if (element) element.disabled = loading;
+    });
+  }
+
+  function updateStatusCard(variant, title, message, showRetry = false) {
+    if (!statusEl || !statusTitleEl || !statusMessageEl) return;
+
+    statusEl.className = "panel-status is-visible";
+    if (variant === "loading") {
+      statusEl.classList.add("is-loading");
+    }
+
+    statusTitleEl.textContent = title;
+    statusMessageEl.textContent = message;
+    retryBtn?.classList.toggle("d-none", !showRetry);
+  }
+
+  function hideStatusCard() {
+    if (!statusEl) return;
+    statusEl.className = "panel-status";
   }
 
   function formatStatusLabel(status) {
@@ -125,6 +157,16 @@ $(document).ready(function () {
     });
 
     table.order([3, "desc"]).draw();
+
+    if (!orders.length) {
+      updateStatusCard(
+        "empty",
+        "No orders yet",
+        "Create the first order to start tracking operational activity.",
+      );
+    } else if (!isLoading) {
+      hideStatusCard();
+    }
   }
 
   function findOrderById(id) {
@@ -141,9 +183,16 @@ $(document).ready(function () {
   }
 
   async function syncOrders() {
+    setLoadingState(true);
+    updateStatusCard(
+      "loading",
+      "Loading orders",
+      "Fetching customers and orders from the API.",
+    );
     await loadCustomers();
     await loadOrders();
     renderOrders();
+    setLoadingState(false);
   }
 
   async function exportOrdersCSV() {
@@ -271,6 +320,13 @@ $(document).ready(function () {
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
         modalInstance?.hide();
       } catch (error) {
+        setLoadingState(false);
+        updateStatusCard(
+          "error",
+          "Unable to save order",
+          error?.message || "The API did not respond as expected.",
+          true,
+        );
         showError(error);
       }
     });
@@ -301,6 +357,7 @@ $(document).ready(function () {
         const confirmModal = bootstrap.Modal.getInstance(modalEl);
         confirmModal?.hide();
       } catch (error) {
+        setLoadingState(false);
         showError(error);
       }
     });
@@ -323,12 +380,34 @@ $(document).ready(function () {
         await syncOrders();
         showToast("Orders synchronized from API.");
       } catch (error) {
+        setLoadingState(false);
+        updateStatusCard(
+          "error",
+          "Unable to load orders",
+          error?.message || "The API did not respond as expected.",
+          true,
+        );
         showError(error);
       }
     });
 
     $("#exportOrderCSV").on("click", function () {
       exportOrdersCSV();
+    });
+
+    $("#ordersRetryBtn").on("click", async function () {
+      try {
+        await syncOrders();
+      } catch (error) {
+        setLoadingState(false);
+        updateStatusCard(
+          "error",
+          "Unable to load orders",
+          error?.message || "The API did not respond as expected.",
+          true,
+        );
+        showError(error);
+      }
     });
   }
 
@@ -341,6 +420,13 @@ $(document).ready(function () {
     try {
       await syncOrders();
     } catch (error) {
+      setLoadingState(false);
+      updateStatusCard(
+        "error",
+        "Unable to load orders",
+        error?.message || "The API did not respond as expected.",
+        true,
+      );
       showError(error);
     }
   }

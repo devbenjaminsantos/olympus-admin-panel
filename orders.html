@@ -90,6 +90,22 @@
     <section class="p-3 p-md-4">
       <div class="card shadow-sm">
         <div class="card-body">
+          <div id="ordersStatus" class="panel-status" aria-live="polite">
+            <div class="panel-status-copy">
+              <strong id="ordersStatusTitle">Loading orders</strong>
+              <span id="ordersStatusMessage"
+                >Fetching customers and orders from the API.</span
+              >
+            </div>
+            <button
+              id="ordersRetryBtn"
+              type="button"
+              class="btn btn-sm btn-outline-secondary d-none"
+            >
+              Retry
+            </button>
+          </div>
+
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
 <div>
 <h5 class="mb-1">Orders Table</h5>

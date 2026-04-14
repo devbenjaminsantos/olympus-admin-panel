@@ -13,6 +13,10 @@
   const sortBy = document.getElementById("sortBy");
   const exportCsvBtn = document.getElementById("exportCsv");
   const resetDataBtn = document.getElementById("resetData");
+  const usersStatusEl = document.getElementById("usersStatus");
+  const usersStatusTitleEl = document.getElementById("usersStatusTitle");
+  const usersStatusMessageEl = document.getElementById("usersStatusMessage");
+  const usersRetryBtn = document.getElementById("usersRetryBtn");
 
   const userModalEl = document.getElementById("userModal");
   const userModal = userModalEl
@@ -51,6 +55,7 @@
   let allUsers = [];
   let page = 1;
   let pendingDeleteId = null;
+  let isLoading = false;
 
   function showToast(message) {
     if (!toast || !toastBody) return;
@@ -61,6 +66,39 @@
   function showError(error) {
     const message = error?.message || "Unexpected error";
     showToast(message);
+  }
+
+  function setLoadingState(loading) {
+    isLoading = loading;
+
+    [
+      exportCsvBtn,
+      resetDataBtn,
+      searchInput,
+      searchInputMobile,
+      statusFilter,
+      sortBy,
+    ].forEach((element) => {
+      if (element) element.disabled = loading;
+    });
+  }
+
+  function updateStatusCard(variant, title, message, showRetry = false) {
+    if (!usersStatusEl || !usersStatusTitleEl || !usersStatusMessageEl) return;
+
+    usersStatusEl.className = "panel-status is-visible";
+    if (variant === "loading") {
+      usersStatusEl.classList.add("is-loading");
+    }
+
+    usersStatusTitleEl.textContent = title;
+    usersStatusMessageEl.textContent = message;
+    usersRetryBtn?.classList.toggle("d-none", !showRetry);
+  }
+
+  function hideStatusCard() {
+    if (!usersStatusEl) return;
+    usersStatusEl.className = "panel-status";
   }
 
   function normalizeUser(user) {
@@ -77,9 +115,18 @@
   }
 
   async function loadUsersFromApi() {
+    setLoadingState(true);
+    updateStatusCard(
+      "loading",
+      "Loading users",
+      "Synchronizing records with the API.",
+    );
+
     const users = await api.request("/users");
     allUsers = users.map(normalizeUser);
     render();
+    hideStatusCard();
+    setLoadingState(false);
   }
 
   function getSearch() {
@@ -202,7 +249,7 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="6" class="text-center text-body-secondary py-5">
-            No users found.
+            No users found for the current filters.
           </td>
         </tr>
       `;
@@ -241,6 +288,22 @@
     if (resultsMeta) resultsMeta.textContent = `${paged.total} total result(s)`;
     if (pageMeta) {
       pageMeta.textContent = `Showing ${paged.startIndex}-${paged.endIndex} of ${paged.total}`;
+    }
+
+    if (!allUsers.length) {
+      updateStatusCard(
+        "empty",
+        "No users yet",
+        "Create the first user to start operating the panel.",
+      );
+    } else if (!filtered.length) {
+      updateStatusCard(
+        "empty",
+        "No matching users",
+        "Try changing the search or filters to find a user.",
+      );
+    } else if (!isLoading) {
+      hideStatusCard();
     }
 
     renderTable(paged.items, paged.startIndex);
@@ -367,6 +430,13 @@
         showToast("Users synchronized from API.");
         confirmResetModal?.hide();
       } catch (error) {
+        setLoadingState(false);
+        updateStatusCard(
+          "error",
+          "Unable to load users",
+          error?.message || "The API did not respond as expected.",
+          true,
+        );
         showError(error);
       }
     });
@@ -410,6 +480,7 @@
 
         userModal?.hide();
       } catch (error) {
+        setLoadingState(false);
         showError(error);
       }
     });
@@ -426,6 +497,21 @@
       exportCsv(filtered);
       showToast("CSV exported.");
     });
+
+    usersRetryBtn?.addEventListener("click", async () => {
+      try {
+        await loadUsersFromApi();
+      } catch (error) {
+        setLoadingState(false);
+        updateStatusCard(
+          "error",
+          "Unable to load users",
+          error?.message || "The API did not respond as expected.",
+          true,
+        );
+        showError(error);
+      }
+    });
   }
 
   async function init() {
@@ -437,6 +523,13 @@
     try {
       await loadUsersFromApi();
     } catch (error) {
+      setLoadingState(false);
+      updateStatusCard(
+        "error",
+        "Unable to load users",
+        error?.message || "The API did not respond as expected.",
+        true,
+      );
       showError(error);
     }
   }

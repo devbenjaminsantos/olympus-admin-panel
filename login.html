@@ -97,7 +97,7 @@
               body: JSON.stringify({ email, password }),
             });
 
-            api.setSession(result.token, result.user);
+            api.setSession(result.token, result.refreshToken, result.user);
             window.location.href = "index.html";
           } catch (error) {
             errorBox.textContent = error.message;
