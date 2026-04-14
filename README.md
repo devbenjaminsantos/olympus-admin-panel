@@ -87,6 +87,20 @@ Quando fizer sentido adicionar uma camada complementar para relatorios, automaco
 3. Crie o arquivo `.env` com base em `.env.example`
 4. Inicie a API com `npm run dev`
 
+### MySQL local com Docker
+
+1. Suba o banco com `docker compose up -d`
+2. Acesse `backend/.env` e altere `DATABASE_DRIVER=mysql`
+3. Inicialize o schema com `npm run db:mysql:init`
+4. Inicie a API com `npm run dev`
+
+### Migrando dados do SQL.js para MySQL
+
+1. Garanta que o MySQL esteja rodando
+2. Na pasta `backend`, rode `npm run db:migrate:mysql`
+3. Confirme no `.env` que `DATABASE_DRIVER=mysql`
+4. Inicie a API com `npm run dev`
+
 ## Roadmap do Produto
 
 ### V1 - Base visual e arquitetura inicial

@@ -4,7 +4,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { config } from "./src/config/config.js";
 import { errorHandler } from "./src/middleware/auth.js";
-import { initializeDatabase } from "./src/db/database.js";
+import { getDatabaseDriver, initializeDatabase } from "./src/db/database.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import orderRoutes from "./src/routes/orderRoutes.js";
@@ -30,7 +30,11 @@ async function start() {
 
   // Health check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "OK", timestamp: new Date().toISOString() });
+    res.json({
+      status: "OK",
+      timestamp: new Date().toISOString(),
+      driver: getDatabaseDriver(),
+    });
   });
 
   // Routes
@@ -65,6 +69,7 @@ async function start() {
   server.listen(config.PORT, () => {
     console.log(`✅ Server running on http://localhost:${config.PORT}`);
     console.log(`📊 Environment: ${config.ENV}`);
+    console.log(`🗄 Database driver: ${getDatabaseDriver()}`);
   });
 }
 
