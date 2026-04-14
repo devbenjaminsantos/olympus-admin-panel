@@ -115,13 +115,16 @@ Quando fizer sentido adicionar uma camada complementar para relatorios, automaco
 
 ### V2 - Painel de gestao operacional funcional
 
-- [ ] Integrar frontend com a API real
-- [ ] Criar fluxo de login com autenticacao JWT
-- [ ] Persistir usuarios e pedidos no banco de dados
-- [ ] Alimentar dashboard com metricas reais
-- [ ] Implementar estados reais de pedidos
-- [ ] Corrigir inconsistencias entre frontend e backend
-- [ ] Atualizar a experiencia para refletir dados reais da operacao
+- [x] Integrar frontend com a API real
+- [x] Criar fluxo de login com autenticacao JWT
+- [x] Persistir usuarios e pedidos no banco de dados
+- [x] Persistir configuracoes globais no backend
+- [x] Alimentar dashboard com metricas reais
+- [x] Implementar estados reais de pedidos
+- [x] Corrigir inconsistencias principais entre frontend e backend
+- [x] Atualizar a experiencia para refletir dados reais da operacao
+- [ ] Validar a operacao completa em ambiente MySQL
+- [ ] Finalizar a revisao funcional de ponta a ponta no navegador
 
 ### V3 - Operacao, monitoramento e controle
 

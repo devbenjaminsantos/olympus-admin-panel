@@ -24,6 +24,14 @@ function loadRows(database, sql) {
   return rows;
 }
 
+function loadRowsIfExists(database, sql) {
+  try {
+    return loadRows(database, sql);
+  } catch {
+    return [];
+  }
+}
+
 async function main() {
   const sourcePath = resolveSqljsPath();
 
@@ -42,7 +50,8 @@ async function main() {
   const orders = loadRows(sourceDb, "SELECT * FROM orders");
   const notifications = loadRows(sourceDb, "SELECT * FROM notifications");
   const analytics = loadRows(sourceDb, "SELECT * FROM analytics");
-  const settingsRows = loadRows(sourceDb, "SELECT * FROM settings");
+  const settingsRows = loadRowsIfExists(sourceDb, "SELECT * FROM settings");
+  const auditLogs = loadRowsIfExists(sourceDb, "SELECT * FROM audit_logs");
 
   const connection = await mysqlPool.getConnection();
 
@@ -189,6 +198,33 @@ async function main() {
       );
     }
 
+    for (const log of auditLogs) {
+      await connection.execute(
+        `
+          INSERT INTO audit_logs (
+            id, user_id, action, resource_type, resource_id, changes, timestamp
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            user_id = VALUES(user_id),
+            action = VALUES(action),
+            resource_type = VALUES(resource_type),
+            resource_id = VALUES(resource_id),
+            changes = VALUES(changes),
+            timestamp = VALUES(timestamp)
+        `,
+        [
+          log.id,
+          log.user_id || null,
+          log.action,
+          log.resource_type,
+          log.resource_id,
+          log.changes || null,
+          log.timestamp,
+        ],
+      );
+    }
+
     await connection.commit();
 
     console.log(`✅ Migration completed from ${sourcePath}`);
@@ -197,6 +233,7 @@ async function main() {
     console.log(`🔔 Notifications: ${notifications.length}`);
     console.log(`📊 Analytics: ${analytics.length}`);
     console.log(`⚙️ Settings rows: ${settingsRows.length}`);
+    console.log(`🧾 Audit logs: ${auditLogs.length}`);
   } catch (error) {
     await connection.rollback();
     throw error;

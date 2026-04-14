@@ -3,6 +3,26 @@
 
   if (!api) return;
 
+  function showAuthError(message) {
+    const existing = document.getElementById("authStatusAlert");
+    if (existing) {
+      existing.textContent = message;
+      existing.classList.remove("d-none");
+      return;
+    }
+
+    const alert = document.createElement("div");
+    alert.id = "authStatusAlert";
+    alert.className = "alert alert-danger m-3";
+    alert.role = "alert";
+    alert.textContent = message;
+
+    const main = document.querySelector("main");
+    const container = document.querySelector(".container-fluid, .container");
+    const target = main || container || document.body;
+    target.prepend(alert);
+  }
+
   function bindLogout() {
     document.querySelectorAll("[data-logout]").forEach((el) => {
       el.addEventListener("click", async (event) => {
@@ -43,6 +63,10 @@
         api.redirectToLogin();
         return;
       }
+
+      showAuthError(
+        "Nao foi possivel validar sua sessao com a API. Verifique se o backend esta em execucao.",
+      );
     }
 
     bindLogout();

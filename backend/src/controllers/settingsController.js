@@ -1,4 +1,5 @@
 import db from "../db/database.js";
+import { logAuditAction } from "../utils/audit.js";
 
 function normalizeSettings(row) {
   return {
@@ -99,6 +100,17 @@ export async function updateSettings(req, res) {
       )
       .get("global");
 
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "update",
+      resourceType: "settings",
+      resourceId: "global",
+      changes: {
+        before: normalizeSettings(current),
+        after: normalizeSettings(updated),
+      },
+    });
+
     res.json({ message: "Settings updated", settings: normalizeSettings(updated) });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -142,6 +154,14 @@ export async function resetSettings(req, res) {
       `,
       )
       .get("global");
+
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "reset",
+      resourceType: "settings",
+      resourceId: "global",
+      changes: normalizeSettings(reset),
+    });
 
     res.json({ message: "Settings restored", settings: normalizeSettings(reset) });
   } catch (error) {

@@ -1,6 +1,7 @@
 import db from "../db/database.js";
 import { generateId } from "../utils/helpers.js";
 import { hashPassword } from "../utils/auth.js";
+import { logAuditAction } from "../utils/audit.js";
 
 export async function getAllUsers(req, res) {
   try {
@@ -68,6 +69,14 @@ export async function createUser(req, res) {
       .prepare("SELECT id, name, email, role, status FROM users WHERE id = ?")
       .get(id);
 
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "create",
+      resourceType: "user",
+      resourceId: id,
+      changes: user,
+    });
+
     res.status(201).json({ message: "User created", user });
   } catch (error) {
     if (
@@ -118,6 +127,15 @@ export async function updateUser(req, res) {
     const updated = await db
       .prepare("SELECT id, name, email, role, status FROM users WHERE id = ?")
       .get(id);
+
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "update",
+      resourceType: "user",
+      resourceId: id,
+      changes: { before: { ...user, password: undefined }, after: updated },
+    });
+
     res.json({ message: "User updated", user: updated });
   } catch (error) {
     if (error.message.includes("Duplicate entry")) {
@@ -137,6 +155,13 @@ export async function deleteUser(req, res) {
     if (result.changes === 0) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "delete",
+      resourceType: "user",
+      resourceId: id,
+    });
 
     res.json({ message: "User deleted" });
   } catch (error) {

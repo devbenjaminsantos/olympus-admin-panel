@@ -47,6 +47,14 @@
     };
   }
 
+  function notifySettingsChanged(settings) {
+    window.dispatchEvent(
+      new CustomEvent("olympus:settings-updated", {
+        detail: settings,
+      }),
+    );
+  }
+
   async function loadSettings() {
     if (!api) return defaults;
 
@@ -67,6 +75,7 @@
         method: "PUT",
         body: JSON.stringify(data),
       });
+      notifySettingsChanged(data);
       showToast("Settings saved successfully.");
     } catch (error) {
       showToast(error.message || "Unable to save settings.");
@@ -79,6 +88,7 @@
         method: "POST",
       });
       fillForm({ ...defaults, ...response.settings });
+      notifySettingsChanged(response.settings);
       showToast("Default settings restored.");
     } catch (error) {
       showToast(error.message || "Unable to restore settings.");

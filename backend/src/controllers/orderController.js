@@ -1,5 +1,6 @@
 import db, { getDatabaseDriver } from "../db/database.js";
 import { generateId, generateOrderId } from "../utils/helpers.js";
+import { logAuditAction } from "../utils/audit.js";
 
 export async function getAllOrders(req, res) {
   try {
@@ -56,6 +57,18 @@ export async function createOrder(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    const customer = await db
+      .prepare("SELECT id, name, status FROM users WHERE id = ?")
+      .get(customer_id);
+
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    if (customer.status !== "active") {
+      return res.status(400).json({ error: "Customer must be active" });
+    }
+
     const id = generateId();
     const orderId = order_id || generateOrderId();
     const normalizedStatus = status || "pending";
@@ -77,6 +90,15 @@ export async function createOrder(req, res) {
     );
 
     const order = await db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
+
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "create",
+      resourceType: "order",
+      resourceId: id,
+      changes: order,
+    });
+
     res.status(201).json({ message: "Order created", order });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -86,15 +108,29 @@ export async function createOrder(req, res) {
 export async function updateOrder(req, res) {
   try {
     const { id } = req.params;
-    const { product, quantity, date, status, total } = req.body;
+    const { product, quantity, date, status, total, customer_id } = req.body;
 
     const order = await db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
 
+    const nextCustomerId = customer_id || order.customer_id;
+    const customer = await db
+      .prepare("SELECT id, name, status FROM users WHERE id = ?")
+      .get(nextCustomerId);
+
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    if (customer.status !== "active") {
+      return res.status(400).json({ error: "Customer must be active" });
+    }
+
     const stmt = db.prepare(`
       UPDATE orders SET 
+        customer_id = ?,
         product = ?, 
         quantity = ?, 
         date = ?, 
@@ -105,6 +141,7 @@ export async function updateOrder(req, res) {
     `);
 
     await stmt.run(
+      nextCustomerId,
       product || order.product,
       quantity || order.quantity,
       date || order.date,
@@ -114,6 +151,15 @@ export async function updateOrder(req, res) {
     );
 
     const updated = await db.prepare("SELECT * FROM orders WHERE id = ?").get(id);
+
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "update",
+      resourceType: "order",
+      resourceId: id,
+      changes: { before: order, after: updated },
+    });
+
     res.json({ message: "Order updated", order: updated });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -130,6 +176,13 @@ export async function deleteOrder(req, res) {
     if (result.changes === 0) {
       return res.status(404).json({ error: "Order not found" });
     }
+
+    await logAuditAction({
+      userId: req.user?.id || null,
+      action: "delete",
+      resourceType: "order",
+      resourceId: id,
+    });
 
     res.json({ message: "Order deleted" });
   } catch (error) {

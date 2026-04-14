@@ -4,6 +4,25 @@
   const btn = document.getElementById("themeToggle");
   const year = document.getElementById("year");
 
+  function showApiWarning(message) {
+    let alert = document.getElementById("apiStatusAlert");
+
+    if (!alert) {
+      alert = document.createElement("div");
+      alert.id = "apiStatusAlert";
+      alert.className = "alert alert-warning m-3";
+      alert.role = "alert";
+
+      const main = document.querySelector("main");
+      const container = document.querySelector(".container-fluid, .container");
+      const target = main || container || document.body;
+      target.prepend(alert);
+    }
+
+    alert.textContent = message;
+    alert.classList.remove("d-none");
+  }
+
   // year footer
   if (year) year.textContent = new Date().getFullYear();
 
@@ -134,7 +153,10 @@
         }
         return;
       } catch {
-        // Fallback para modo local durante a migracao da V2.
+        showApiWarning(
+          "Nao foi possivel carregar metricas reais. Verifique a conexao com a API.",
+        );
+        return;
       }
     }
 
@@ -218,6 +240,11 @@
     });
   }
 
+  window.addEventListener("olympus:settings-updated", (event) => {
+    if (!event.detail) return;
+    applyBranding(event.detail);
+  });
+
   async function loadBrandingSettings() {
     if (api?.getToken?.()) {
       try {
@@ -225,7 +252,10 @@
         applyBranding(settings);
         return;
       } catch {
-        // Fallback local while migration completes.
+        showApiWarning(
+          "Nao foi possivel carregar as configuracoes da empresa na API.",
+        );
+        return;
       }
     }
 
@@ -249,7 +279,10 @@
         if (ordersCountEl) ordersCountEl.textContent = orderStats.total ?? 0;
         return;
       } catch {
-        // Fallback para modo local durante a migracao da V2.
+        showApiWarning(
+          "Nao foi possivel atualizar os contadores da barra lateral pela API.",
+        );
+        return;
       }
     }
 

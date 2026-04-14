@@ -106,6 +106,19 @@ async function initializeSqljsDatabase() {
     );
   `);
 
+  sqljsDb.run(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      action TEXT NOT NULL,
+      resource_type TEXT NOT NULL,
+      resource_id TEXT NOT NULL,
+      changes TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+  `);
+
   await seedDefaultAdminSqljs();
   await seedDefaultSettingsSqljs();
 }

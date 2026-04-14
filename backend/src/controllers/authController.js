@@ -4,6 +4,7 @@ import {
   verifyPassword,
   createToken,
   createRefreshToken,
+  verifyRefreshToken,
 } from "../utils/auth.js";
 import { generateId } from "../utils/helpers.js";
 
@@ -125,15 +126,23 @@ export async function refreshToken(req, res) {
       return res.status(400).json({ error: "Refresh token required" });
     }
 
-    // Verificar refresh token (simplificado, sem secret diferente neste caso)
-    const decoded = createRefreshToken({ id: req.user.id });
+    const decoded = verifyRefreshToken(refreshToken);
+    if (!decoded?.id) {
+      return res.status(401).json({ error: "Invalid refresh token" });
+    }
+
     const user = await db
       .prepare("SELECT id, name, email, role FROM users WHERE id = ?")
-      .get(req.user.id);
+      .get(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     const newToken = createToken(user);
+    const nextRefreshToken = createRefreshToken(user);
 
-    res.json({ token: newToken });
+    res.json({ token: newToken, refreshToken: nextRefreshToken });
   } catch (error) {
     res.status(401).json({ error: "Invalid refresh token" });
   }

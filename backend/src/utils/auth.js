@@ -34,3 +34,11 @@ export function verifyToken(token) {
 export function createRefreshToken(user) {
   return jwt.sign({ id: user.id }, config.JWT_SECRET, { expiresIn: "30d" });
 }
+
+export function verifyRefreshToken(token) {
+  try {
+    return jwt.verify(token, config.JWT_SECRET);
+  } catch (error) {
+    return null;
+  }
+}
