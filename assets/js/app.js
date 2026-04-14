@@ -1,4 +1,5 @@
 (function () {
+  const api = window.OlympusAPI;
   const html = document.documentElement;
   const btn = document.getElementById("themeToggle");
   const year = document.getElementById("year");
@@ -101,7 +102,42 @@
     });
   }
 
-  function loadDashboardMetrics() {
+  function setCurrentUserName() {
+    const storedUser = api?.getStoredUser?.();
+    const userName = storedUser?.name || "Admin";
+
+    document.querySelectorAll("[data-current-user-name]").forEach((el) => {
+      el.textContent = userName;
+    });
+  }
+
+  async function loadDashboardMetrics() {
+    if (api?.getToken?.()) {
+      try {
+        const [userStats, orderStats] = await Promise.all([
+          api.request("/users/stats"),
+          api.request("/orders/stats"),
+        ]);
+
+        const totalUsersEl = document.getElementById("totalUsers");
+        const totalOrdersEl = document.getElementById("totalOrders");
+        const pendingOrdersEl = document.getElementById("pendingOrders");
+        const totalRevenueEl = document.getElementById("totalRevenue");
+
+        if (totalUsersEl) totalUsersEl.textContent = userStats.total ?? 0;
+        if (totalOrdersEl) totalOrdersEl.textContent = orderStats.total ?? 0;
+        if (pendingOrdersEl) pendingOrdersEl.textContent = orderStats.pending ?? 0;
+        if (totalRevenueEl) {
+          totalRevenueEl.textContent = `$${Number(
+            orderStats.totalRevenue || 0,
+          ).toFixed(2)}`;
+        }
+        return;
+      } catch {
+        // Fallback para modo local durante a migracao da V2.
+      }
+    }
+
     const usersRaw = localStorage.getItem("admin_users_v1");
     const ordersRaw = localStorage.getItem("olympus_orders");
 
@@ -204,7 +240,25 @@
     });
   }
 
-  function updateSidebarCounts() {
+  async function updateSidebarCounts() {
+    if (api?.getToken?.()) {
+      try {
+        const [userStats, orderStats] = await Promise.all([
+          api.request("/users/stats"),
+          api.request("/orders/stats"),
+        ]);
+
+        const usersCountEl = document.getElementById("usersCount");
+        const ordersCountEl = document.getElementById("ordersCount");
+
+        if (usersCountEl) usersCountEl.textContent = userStats.total ?? 0;
+        if (ordersCountEl) ordersCountEl.textContent = orderStats.total ?? 0;
+        return;
+      } catch {
+        // Fallback para modo local durante a migracao da V2.
+      }
+    }
+
     const usersRaw = localStorage.getItem("admin_users_v1");
     const ordersRaw = localStorage.getItem("olympus_orders");
 
@@ -237,4 +291,5 @@
   updateCurrentDateTime();
   setInterval(updateCurrentDateTime, 60000);
   applyBranding();
+  setCurrentUserName();
 })();

@@ -124,14 +124,14 @@
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                   >
-                    Ben
+                    <span data-current-user-name>Admin</span>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
                       <a class="dropdown-item" href="settings.html">Settings</a>
                     </li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="#">Logout</a></li>
+                    <li><a class="dropdown-item" href="#" data-logout>Logout</a></li>
                   </ul>
                 </div>
               </div>
@@ -186,7 +186,7 @@
                     class="btn btn-outline-danger"
                     type="button"
                   >
-                    Reset demo
+                    Sync users
                   </button>
                 </div>
               </div>
@@ -324,6 +324,20 @@
               <div class="invalid-feedback">Valid email is required.</div>
             </div>
 
+            <div class="mb-3">
+              <label class="form-label" for="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                class="form-control"
+                minlength="6"
+                placeholder="Required when creating a new user"
+              />
+              <div class="form-text" id="passwordHelp">
+                Required for new users. Optional when editing.
+              </div>
+            </div>
+
             <div class="row g-2">
               <div class="col-6">
                 <label class="form-label" for="status">Status</label>
@@ -339,8 +353,7 @@
                 <select id="role" class="form-select" required>
                   <option value="admin">Admin</option>
                   <option value="manager">Manager</option>
-                  <option value="support">Support</option>
-                  <option value="viewer" selected>Viewer</option>
+                  <option value="user" selected>User</option>
                 </select>
                 <div class="invalid-feedback">Role is required.</div>
               </div>
@@ -362,11 +375,11 @@
                     type="button"
                     class="btn-close"
                     data-bs-dismiss="modal"
-                    aria-label="Close"
-                  ></button>
+                  aria-label="Close"
+                ></button>
                 </div>
                 <div class="modal-body">
-                  This will overwrite all local changes. Are you sure?
+                  This will reload the latest users from the API. Continue?
                 </div>
                 <div class="modal-footer">
                   <button
@@ -381,7 +394,7 @@
                     class="btn btn-danger"
                     id="confirmResetBtn"
                   >
-                    Reset
+                    Reload
                   </button>
                 </div>
               </div>
@@ -434,6 +447,8 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/auth.js"></script>
     <script src="assets/js/app.js"></script>
     <script src="assets/js/users.js"></script>
   </body>
