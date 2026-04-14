@@ -9,7 +9,7 @@
     "dev": "node server.js",
     "db:mysql:init": "node scripts/init-mysql.js",
     "db:migrate:mysql": "node scripts/migrate-sqljs-to-mysql.js",
-    "test": "echo 'Tests coming soon'"
+    "test": "node --test"
   },
   "keywords": [
     "admin",

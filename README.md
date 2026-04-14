@@ -86,6 +86,7 @@ Quando fizer sentido adicionar uma camada complementar para relatorios, automaco
 2. Instale as dependencias com `npm install`
 3. Crie o arquivo `.env` com base em `.env.example`
 4. Inicie a API com `npm run dev`
+5. Rode os testes basicos com `npm test`
 
 ### MySQL local com Docker
 
@@ -100,6 +101,47 @@ Quando fizer sentido adicionar uma camada complementar para relatorios, automaco
 2. Na pasta `backend`, rode `npm run db:migrate:mysql`
 3. Confirme no `.env` que `DATABASE_DRIVER=mysql`
 4. Inicie a API com `npm run dev`
+
+## Checklist de QA da V2
+
+Use esta validacao no fluxo local com `sqljs` antes de migrar para MySQL.
+
+### Preparacao
+
+1. Na pasta `backend`, confirme `DATABASE_DRIVER=sqljs`
+2. Rode a API com `npm run dev`
+3. Abra o frontend com `Live Server` ou navegador local
+4. Acesse `login.html`
+
+### Fluxo principal
+
+1. Faça login com `admin@olympus.local` e `Admin123!`
+2. Confirme se o dashboard carrega metricas sem erro visual
+3. Abra `Users` e crie um novo usuario
+4. Edite esse usuario e confirme a atualizacao
+5. Exclua ou inative um usuario de teste
+6. Abra `Orders` e crie um pedido para um usuario ativo
+7. Edite o pedido criado
+8. Exclua o pedido criado
+9. Abra `Settings` e altere o nome da empresa
+10. Confirme se o branding atualiza sem reload
+
+### Verificacoes de UX
+
+1. Confirme se toasts aparecem com mensagens coerentes
+2. Confirme se estados de loading, erro e retry aparecem nas telas principais
+3. Confirme se listas vazias mostram mensagens claras
+4. Confirme se tema claro/escuro continua funcionando
+5. Confirme se o logout redireciona para `login.html`
+
+### Resultado esperado
+
+- login funcional
+- CRUD de usuarios funcional
+- CRUD de pedidos funcional
+- configuracoes persistidas no backend
+- dashboard refletindo dados reais
+- feedback visual consistente na interface
 
 ## Roadmap do Produto
 
