@@ -4,7 +4,7 @@
 
 RunBase sera um sistema administrativo interno para gestao de clientes, planos e pedidos, com autenticacao segura, controle de acesso por roles e painel operacional baseado em dados reais.
 
-O projeto atual funciona como um prototipo funcional do produto: possui frontend administrativo, backend inicial, autenticacao, usuarios, pedidos, configuracoes e metricas. A nova fase transforma essa base em um produto mais robusto com Next.js, ASP.NET Core Web API, Azure SQL, RBAC real e deploy em Azure.
+O projeto atual funciona como um prototipo funcional do produto: possui frontend administrativo, backend inicial, autenticacao, usuarios, pedidos, configuracoes e metricas. A nova fase transforma essa base em um produto mais robusto com Next.js, ASP.NET Core Web API, SQL Server gerenciado em cloud, RBAC real e deploy containerizado.
 
 O inicio da implementacao esta definido em [`RUNBASE_START.md`](./RUNBASE_START.md).
 
@@ -21,9 +21,9 @@ O inicio da implementacao esta definido em [`RUNBASE_START.md`](./RUNBASE_START.
 
 - Frontend em Next.js, React e TypeScript.
 - Backend em ASP.NET Core Web API e C#.
-- Banco em Azure SQL.
+- Banco em AWS RDS SQL Server.
 - Auth com JWT, refresh token e RBAC.
-- Deploy via Azure Static Web Apps e Azure App Service.
+- Deploy via API containerizada e frontend na Vercel.
 - CI/CD com GitHub Actions.
 
 ### Estrategia
@@ -284,14 +284,14 @@ Criterio de pronto:
 - Dashboard reflete dados reais.
 - Erros da API aparecem de forma clara para o usuario.
 
-### Milestone 7 - Azure SQL e Deploy
+### Milestone 7 - Cloud Database e Deploy
 
 Objetivo: colocar o produto em ambiente cloud.
 
 - [x] Criar migrations.
-- [x] Configurar Azure SQL.
-- [ ] Configurar Azure App Service para API.
-- [ ] Configurar Azure Static Web Apps para frontend.
+- [x] Configurar AWS RDS SQL Server.
+- [x] Configurar deploy containerizado da API.
+- [ ] Configurar Vercel para frontend.
 - [ ] Configurar variaveis de ambiente.
 - [ ] Criar GitHub Actions para build, test e deploy.
 
@@ -299,7 +299,7 @@ Criterio de pronto:
 
 - Push na branch principal executa pipeline.
 - Backend e frontend fazem deploy automaticamente.
-- Ambiente publicado usa Azure SQL.
+- Ambiente publicado usa banco SQL Server gerenciado em cloud.
 
 ### Milestone 8 - Qualidade e Produto
 

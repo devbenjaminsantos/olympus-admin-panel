@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: runbase-system
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    plan: free

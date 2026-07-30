@@ -6,9 +6,9 @@ The current direction is a modern product foundation with:
 
 - Next.js, React, and TypeScript for the frontend
 - ASP.NET Core Web API and C# for the backend
-- Azure SQL for persistence
+- AWS RDS SQL Server for persistence
 - JWT, refresh tokens, and role-based access control
-- Azure Static Web Apps and Azure App Service for deployment
+- Containerized API deployment and Vercel for frontend hosting
 - GitHub Actions for CI/CD
 
 The original Olympus Admin prototype was removed after the RunBase foundation became the active product base.
@@ -107,6 +107,7 @@ Planned improvements:
 - [Product and planning notes in Portuguese](./docs/PROJETO_E_PLANEJAMENTO.md)
 - [RunBase roadmap](./docs/RUNBASE_ROADMAP.md)
 - [Implementation start plan](./docs/RUNBASE_START.md)
+- [Cloud deployment guide](./docs/CLOUD_DEPLOYMENT.md)
 
 ## Author
 
