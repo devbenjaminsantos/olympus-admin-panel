@@ -89,7 +89,7 @@ Por isso, essa versao foi usada como referencia de produto, UX e aprendizado tec
 
 A terceira versao marca a virada do projeto para RunBase.
 
-Aqui, o projeto deixa de ser apenas uma evolucao do Olympus Admin e passa a ter uma nova fundacao tecnica, pensada para um produto mais serio: backend em ASP.NET Core, frontend futuro em Next.js, banco em Azure SQL, RBAC real e deploy em Azure.
+Aqui, o projeto deixa de ser apenas uma evolucao do Olympus Admin e passa a ter uma nova fundacao tecnica, pensada para um produto mais serio: backend em ASP.NET Core, frontend futuro em Next.js, banco gerenciado em cloud, RBAC real e deploy containerizado.
 
 ### Decisao de arquitetura
 
@@ -103,7 +103,7 @@ O backend vem primeiro porque autenticacao, roles, regras de dominio, banco e co
 | --- | --- |
 | Frontend | Next.js, React, TypeScript |
 | Backend | ASP.NET Core Web API, C# |
-| Banco | Azure SQL |
+| Banco | Neon Postgres |
 | Auth | JWT, Refresh Token, RBAC |
 | API Docs | Scalar |
 | Deploy | Azure Static Web Apps, Azure App Service |

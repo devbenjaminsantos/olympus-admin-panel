@@ -4,7 +4,7 @@
 
 RunBase sera um sistema administrativo interno para gestao de clientes, planos e pedidos, com autenticacao segura, controle de acesso por roles e painel operacional baseado em dados reais.
 
-O projeto atual funciona como um prototipo funcional do produto: possui frontend administrativo, backend inicial, autenticacao, usuarios, pedidos, configuracoes e metricas. A nova fase transforma essa base em um produto mais robusto com Next.js, ASP.NET Core Web API, SQL Server gerenciado em cloud, RBAC real e deploy containerizado.
+O projeto atual funciona como um prototipo funcional do produto: possui frontend administrativo, backend inicial, autenticacao, usuarios, pedidos, configuracoes e metricas. A nova fase transforma essa base em um produto mais robusto com Next.js, ASP.NET Core Web API, Postgres gerenciado em cloud, RBAC real e deploy containerizado.
 
 O inicio da implementacao esta definido em [`RUNBASE_START.md`](./RUNBASE_START.md).
 
@@ -21,7 +21,7 @@ O inicio da implementacao esta definido em [`RUNBASE_START.md`](./RUNBASE_START.
 
 - Frontend em Next.js, React e TypeScript.
 - Backend em ASP.NET Core Web API e C#.
-- Banco em AWS RDS SQL Server.
+- Banco em Neon Postgres.
 - Auth com JWT, refresh token e RBAC.
 - Deploy via API containerizada e frontend na Vercel.
 - CI/CD com GitHub Actions.
@@ -289,7 +289,7 @@ Criterio de pronto:
 Objetivo: colocar o produto em ambiente cloud.
 
 - [x] Criar migrations.
-- [x] Configurar AWS RDS SQL Server.
+- [ ] Configurar Neon Postgres.
 - [x] Configurar deploy containerizado da API.
 - [ ] Configurar Vercel para frontend.
 - [ ] Configurar variaveis de ambiente.
@@ -299,7 +299,7 @@ Criterio de pronto:
 
 - Push na branch principal executa pipeline.
 - Backend e frontend fazem deploy automaticamente.
-- Ambiente publicado usa banco SQL Server gerenciado em cloud.
+- Ambiente publicado usa banco Postgres gerenciado em cloud.
 
 ### Milestone 8 - Qualidade e Produto
 

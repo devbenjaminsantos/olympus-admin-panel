@@ -6,7 +6,7 @@ The current direction is a modern product foundation with:
 
 - Next.js, React, and TypeScript for the frontend
 - ASP.NET Core Web API and C# for the backend
-- AWS RDS SQL Server for persistence
+- Neon Postgres for persistence
 - JWT, refresh tokens, and role-based access control
 - Containerized API deployment and Vercel for frontend hosting
 - GitHub Actions for CI/CD

@@ -6,8 +6,6 @@ namespace RunBase.Infrastructure.Persistence;
 public sealed class RunBaseDbContextFactory : IDesignTimeDbContextFactory<RunBaseDbContext>
 {
     private const string DefaultConnectionStringEnvironmentKey = "ConnectionStrings__DefaultConnection";
-    private const string LocalWindowsConnectionString =
-        "Server=(localdb)\\mssqllocaldb;Database=RunBase;Trusted_Connection=True;TrustServerCertificate=True;";
 
     public RunBaseDbContext CreateDbContext(string[] args)
     {
@@ -15,13 +13,14 @@ public sealed class RunBaseDbContextFactory : IDesignTimeDbContextFactory<RunBas
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            connectionString = LocalWindowsConnectionString;
+            throw new InvalidOperationException(
+                $"{DefaultConnectionStringEnvironmentKey} must be configured to create migrations.");
         }
 
         var optionsBuilder = new DbContextOptionsBuilder<RunBaseDbContext>();
-        optionsBuilder.UseSqlServer(
+        optionsBuilder.UseNpgsql(
             connectionString,
-            sqlOptions => sqlOptions.EnableRetryOnFailure());
+            npgsqlOptions => npgsqlOptions.EnableRetryOnFailure());
 
         return new RunBaseDbContext(optionsBuilder.Options);
     }

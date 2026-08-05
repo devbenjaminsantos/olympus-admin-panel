@@ -23,15 +23,14 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        _ = configuration;
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         if (!string.IsNullOrWhiteSpace(connectionString))
         {
             services.AddDbContext<RunBaseDbContext>(options =>
-                options.UseSqlServer(
+                options.UseNpgsql(
                     connectionString,
-                    sqlOptions => sqlOptions.EnableRetryOnFailure()));
+                    npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
 
             services.AddScoped<IClientRepository, EfClientRepository>();
             services.AddScoped<INotificationCampaignRepository, EfNotificationCampaignRepository>();

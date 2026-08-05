@@ -7,7 +7,7 @@ This document tracks the current cloud deployment direction after moving away fr
 ```text
 Frontend: Vercel
 API: Containerized ASP.NET Core Web API
-Database: AWS RDS for SQL Server
+Database: Neon Postgres
 CI/CD: GitHub Actions
 ```
 
@@ -16,19 +16,13 @@ CI/CD: GitHub Actions
 Current database provider:
 
 ```text
-AWS RDS for SQL Server
-```
-
-Expected database name:
-
-```text
-runbase_db
+Neon Postgres
 ```
 
 Required connection string shape:
 
 ```text
-ConnectionStrings__DefaultConnection=Server=tcp:<rds-endpoint>,1433;Initial Catalog=runbase_db;Persist Security Info=False;User ID=<user>;Password=<password>;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;
+ConnectionStrings__DefaultConnection=Host=<neon-host>;Database=<database>;Username=<user>;Password=<password>;SSL Mode=Require;Trust Server Certificate=true
 ```
 
 Do not commit real passwords or full production connection strings.
@@ -121,8 +115,7 @@ Initial ECS notes:
 - Health check path: `/health`
 - CPU/memory: smallest development-friendly size
 - Secrets: use ECS task environment variables or AWS Secrets Manager
-- Network: allow outbound access to RDS SQL Server on port `1433`
-- RDS security group: allow inbound `1433` from the API service security group
+- Network: allow outbound access to Neon Postgres on port `5432`
 
 ## Frontend
 
@@ -147,6 +140,5 @@ Frontend__AllowedOrigins__0=https://<vercel-domain>
 ## Security Notes
 
 - Rotate any database password that was exposed in terminal output, chat, screenshots, or logs.
-- Keep RDS public access temporary while validating locally.
-- Prefer allowing database traffic from the API security group instead of broad public IP ranges.
+- Prefer pooled Neon connection strings for high-concurrency or serverless-style deployments.
 - Do not expose Scalar/OpenAPI in production unless intentionally enabled behind access control.

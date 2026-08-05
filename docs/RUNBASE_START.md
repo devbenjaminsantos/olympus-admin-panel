@@ -105,7 +105,7 @@ Nesta fase, nao entram:
 - Plans;
 - Orders;
 - frontend Next.js;
-- Azure SQL real;
+- Neon Postgres real;
 - deploy.
 
 Esses itens dependem da fundacao estar estavel.
