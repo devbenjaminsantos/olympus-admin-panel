@@ -1,4 +1,4 @@
-name: RunBase CI
+name: RunBase CI/CD
 
 on:
   push:
@@ -85,3 +85,40 @@ jobs:
       - name: Build Docker image
         run: docker build -t runbase-api:ci .
         working-directory: backend
+
+  deploy-api:
+    name: Deploy API to Render
+    runs-on: ubuntu-latest
+    needs:
+      - backend
+      - api-container
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+
+    steps:
+      - name: Trigger Render deploy
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
+
+      - name: Skip Render deploy
+        if: env.RENDER_DEPLOY_HOOK_URL == ''
+        run: echo "RENDER_DEPLOY_HOOK_URL secret is not configured; skipping Render deploy."
+
+  deploy-frontend:
+    name: Deploy frontend to Vercel
+    runs-on: ubuntu-latest
+    needs:
+      - frontend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+
+    steps:
+      - name: Trigger Vercel deploy
+        if: env.VERCEL_DEPLOY_HOOK_URL != ''
+        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+
+      - name: Skip Vercel deploy
+        if: env.VERCEL_DEPLOY_HOOK_URL == ''
+        run: echo "VERCEL_DEPLOY_HOOK_URL secret is not configured; skipping Vercel deploy."

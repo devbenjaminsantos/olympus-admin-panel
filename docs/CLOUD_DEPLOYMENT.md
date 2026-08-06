@@ -137,6 +137,29 @@ After the API is published, update the API CORS setting:
 Frontend__AllowedOrigins__0=https://<vercel-domain>
 ```
 
+## GitHub Actions CI/CD
+
+The workflow `.github/workflows/backend-ci.yml` runs on pushes and pull requests that change backend, frontend, Render config, or the workflow itself.
+
+Pipeline checks:
+
+```text
+Backend: restore, build, xUnit tests
+Frontend: npm ci, Next.js production build
+API container: Docker image build from backend/Dockerfile
+```
+
+Production deploys are triggered only on pushes to `main`.
+
+Required repository secrets:
+
+```text
+RENDER_DEPLOY_HOOK_URL
+VERCEL_DEPLOY_HOOK_URL
+```
+
+If a deploy hook secret is not configured, the workflow keeps the checks green and skips that deploy target with an explicit log message.
+
 ## Security Notes
 
 - Rotate any database password that was exposed in terminal output, chat, screenshots, or logs.

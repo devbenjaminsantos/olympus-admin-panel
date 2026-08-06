@@ -109,9 +109,9 @@ Regras:
 - Status suportados no MVP: `Pending`, `Processing`, `Completed`, `Cancelled`, `Refunded`.
 - Pedido deve registrar `amount` proprio para manter historico financeiro.
 
-## Roadmap por Milestones
+## Roadmap por Versões
 
-### Milestone 0 - Repositorio e Direcao
+### V0 - Repositorio e Direção
 
 Objetivo: deixar claro que o projeto entrou na fase RunBase.
 
@@ -124,7 +124,7 @@ Criterio de pronto:
 
 - Qualquer pessoa abrindo o repo entende o que existe hoje, qual e o produto alvo e qual e a proxima etapa tecnica.
 
-### Milestone 1 - Backend Foundation
+### V1 - Backend Foundation
 
 Objetivo: criar a base ASP.NET Core Web API.
 
@@ -158,7 +158,7 @@ Criterio de pronto:
 - `/health` responde.
 - Build passa via CLI.
 
-### Milestone 2 - Auth, JWT e RBAC
+### V2 - Auth, JWT e RBAC
 
 Objetivo: implementar a base de seguranca antes dos CRUDs.
 
@@ -180,7 +180,7 @@ Criterio de pronto:
 - Logout invalida refresh token.
 - Roles bloqueiam acesso indevido.
 
-### Milestone 3 - Modulos Operacionais
+### V3 - Modulos Operacionais
 
 Objetivo: implementar os CRUDs centrais do produto.
 
@@ -202,7 +202,7 @@ Criterio de pronto:
 - Viewer nao consegue alterar dados.
 - Testes cobrem regras principais.
 
-### Milestone 4 - Security & Privacy Foundation
+### V4 - Security & Privacy Foundation
 
 Objetivo: pautar a V4 em cyberseguranca aplicada, protegendo dados sensiveis e reforcando confidencialidade, integridade e disponibilidade.
 
@@ -236,7 +236,7 @@ Criterio de pronto:
 - SQL Injection: persistencia futura segue uso de parametros, sem concatenacao de SQL.
 - Ambiente demo tem clientes e assinaturas realistas sem dados reais.
 
-### Milestone 5 - Frontend Foundation
+### V5 - Frontend Foundation
 
 Objetivo: criar o admin em Next.js consumindo a API real.
 
@@ -266,7 +266,7 @@ Criterio de pronto:
 - Menu muda de acordo com a role.
 - Nenhuma tela principal depende de mock fixo.
 
-### Milestone 6 - Telas Principais
+### V6 - Telas Principais
 
 Objetivo: entregar o fluxo operacional completo.
 
@@ -284,7 +284,7 @@ Criterio de pronto:
 - Dashboard reflete dados reais.
 - Erros da API aparecem de forma clara para o usuario.
 
-### Milestone 7 - Cloud Database e Deploy
+### V7 - Cloud Database e Deploy
 
 Objetivo: colocar o produto em ambiente cloud.
 
