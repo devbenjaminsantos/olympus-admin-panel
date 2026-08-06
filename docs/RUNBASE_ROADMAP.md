@@ -289,11 +289,11 @@ Criterio de pronto:
 Objetivo: colocar o produto em ambiente cloud.
 
 - [x] Criar migrations.
-- [ ] Configurar Neon Postgres.
+- [x] Configurar Neon Postgres.
 - [x] Configurar deploy containerizado da API.
-- [ ] Configurar Vercel para frontend.
-- [ ] Configurar variaveis de ambiente.
-- [ ] Criar GitHub Actions para build, test e deploy.
+- [x] Configurar Vercel para frontend.
+- [x] Configurar variaveis de ambiente.
+- [x] Criar GitHub Actions para build, test e deploy.
 
 Criterio de pronto:
 
