@@ -840,3 +840,5 @@ internal sealed class ValidationFilter<TRequest> : IEndpointFilter
         return Results.ValidationProblem(errors);
     }
 }
+
+public partial class Program;

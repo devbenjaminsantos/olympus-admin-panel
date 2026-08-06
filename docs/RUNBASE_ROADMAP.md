@@ -301,23 +301,29 @@ Criterio de pronto:
 - Backend e frontend fazem deploy automaticamente.
 - Ambiente publicado usa banco Postgres gerenciado em cloud.
 
-### Milestone 8 - Qualidade e Produto
+### V8 - Testes, Segurança e Qualidade
 
-Objetivo: amadurecer o RunBase como produto demonstravel.
+Objetivo: cobrir funcionalidades criticas, fluxos reais e brechas de seguranca com testes automatizados.
 
-- [ ] Testes xUnit para Services.
-- [ ] Testes Vitest para utilitarios do frontend.
-- [ ] Testes Playwright para login e fluxo principal.
-- [ ] Scalar revisado com documentacao dos endpoints.
-- [ ] README atualizado com setup completo.
-- [ ] Documentar roles, endpoints e variaveis de ambiente.
-- [ ] Criar dados seed para demo.
+- [x] Revisar cobertura xUnit atual dos Services.
+- [x] Criar primeira suite de integracao da API para health, login, headers, auth/RBAC, validacao e auditoria sensivel.
+- [ ] Ampliar xUnit para regras de seguranca, RBAC e auditoria sensivel.
+- [ ] Criar testes de integracao da API para auth, CRUDs e headers de seguranca.
+- [ ] Criar testes contra brechas comuns: requests invalidas, acesso sem token, role indevida, payload suspeito e dados sensiveis.
+- [ ] Configurar Vitest para utilitarios do frontend.
+- [ ] Criar testes Vitest para sessao, API client, guards e tratamento de erro.
+- [ ] Configurar Playwright.
+- [ ] Criar Playwright para login, dashboard e navegacao principal.
+- [ ] Criar Playwright para bloqueio por role e logout/refresh.
+- [ ] Integrar xUnit, Vitest e Playwright no GitHub Actions.
+- [ ] Documentar estrategia de testes e comandos principais.
 
 Criterio de pronto:
 
-- Projeto pode ser apresentado como produto real.
-- Novo desenvolvedor consegue rodar localmente seguindo a documentacao.
+- CI reprova regressao funcional ou quebra de seguranca basica.
 - Fluxo principal esta coberto por testes automatizados.
+- Tentativas comuns de acesso indevido e payload suspeito possuem teste.
+- Frontend tem cobertura minima para utilitarios e fluxos criticos.
 
 ## Ordem Recomendada de Execucao
 
