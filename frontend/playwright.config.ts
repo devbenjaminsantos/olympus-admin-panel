@@ -42,7 +42,7 @@ export default defineConfig({
         ASPNETCORE_URLS: apiUrl,
         ConnectionStrings__DefaultConnection: ""
       },
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
       url: `${apiUrl}/health`
     },
@@ -51,7 +51,7 @@ export default defineConfig({
       env: {
         NEXT_PUBLIC_API_BASE_URL: apiUrl
       },
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
       url: `${frontendUrl}/login`
     }

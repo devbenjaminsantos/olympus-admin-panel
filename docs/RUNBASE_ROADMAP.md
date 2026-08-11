@@ -316,7 +316,7 @@ Objetivo: cobrir funcionalidades criticas, fluxos reais e brechas de seguranca c
 - [x] Criar Playwright para login, dashboard e navegacao principal.
 - [x] Criar Playwright para bloqueio por role e logout/refresh.
 - [x] Integrar xUnit, Vitest e Playwright no GitHub Actions.
-- [ ] Documentar estrategia de testes e comandos principais.
+- [x] Documentar estrategia de testes e comandos principais em [`TESTING.md`](./TESTING.md).
 
 Criterio de pronto:
 
