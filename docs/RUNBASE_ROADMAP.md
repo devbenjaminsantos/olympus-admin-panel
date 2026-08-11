@@ -310,8 +310,8 @@ Objetivo: cobrir funcionalidades criticas, fluxos reais e brechas de seguranca c
 - [x] Ampliar xUnit para regras de seguranca, RBAC e auditoria sensivel.
 - [x] Criar testes de integracao da API para auth, CRUDs e headers de seguranca.
 - [x] Criar testes contra brechas comuns: requests invalidas, acesso sem token, role indevida, payload suspeito e dados sensiveis.
-- [ ] Configurar Vitest para utilitarios do frontend.
-- [ ] Criar testes Vitest para sessao, API client, guards e tratamento de erro.
+- [x] Configurar Vitest para utilitarios do frontend.
+- [x] Criar testes Vitest para sessao, API client, guards e tratamento de erro.
 - [ ] Configurar Playwright.
 - [ ] Criar Playwright para login, dashboard e navegacao principal.
 - [ ] Criar Playwright para bloqueio por role e logout/refresh.
