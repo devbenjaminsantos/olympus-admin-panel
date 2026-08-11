@@ -2,22 +2,13 @@
 
 ## Visao
 
-RunBase sera um sistema administrativo interno para gestao de clientes, planos e pedidos, com autenticacao segura, controle de acesso por roles e painel operacional baseado em dados reais.
+RunBase e um sistema administrativo interno para gestao de clientes, planos e pedidos, com autenticacao segura, controle de acesso por roles e painel operacional baseado em dados reais.
 
-O projeto atual funciona como um prototipo funcional do produto: possui frontend administrativo, backend inicial, autenticacao, usuarios, pedidos, configuracoes e metricas. A nova fase transforma essa base em um produto mais robusto com Next.js, ASP.NET Core Web API, Postgres gerenciado em cloud, RBAC real e deploy containerizado.
-
-O inicio da implementacao esta definido em [`RUNBASE_START.md`](./RUNBASE_START.md).
+O projeto possui frontend em Next.js, API em ASP.NET Core, Postgres gerenciado, RBAC, testes automatizados e deploy continuo.
 
 ## Decisao de Direcao
 
-### Estado atual
-
-- Frontend estatico com HTML, CSS e JavaScript.
-- Backend em Node.js/Express.
-- Persistencia local com sql.js e suporte a MySQL.
-- Modulos ja representados: auth, users, orders, settings, analytics e notifications.
-
-### Estado alvo
+### Stack consolidada
 
 - Frontend em Next.js, React e TypeScript.
 - Backend em ASP.NET Core Web API e C#.
@@ -28,7 +19,7 @@ O inicio da implementacao esta definido em [`RUNBASE_START.md`](./RUNBASE_START.
 
 ### Estrategia
 
-O RunBase deve ser reconstruido de forma incremental, usando o produto atual como referencia de UX e regras operacionais. A prioridade nao e migrar cada arquivo existente, mas preservar o aprendizado do prototipo e criar uma base tecnica limpa para o produto final.
+O RunBase evolui de forma incremental, preservando os contratos de seguranca, as regras operacionais e a arquitetura em camadas ja consolidados.
 
 ## Roles
 
@@ -128,8 +119,6 @@ Criterio de pronto:
 
 Objetivo: criar a base ASP.NET Core Web API.
 
-Documento de inicio: [`RUNBASE_START.md`](./RUNBASE_START.md).
-
 - [x] Criar solution `.NET`.
 - [x] Criar projeto `RunBase.Api`.
 - [x] Criar projetos de dominio/aplicacao se necessario, mantendo Clean Architecture leve.
@@ -207,9 +196,9 @@ Criterio de pronto:
 Objetivo: pautar a V4 em cyberseguranca aplicada, protegendo dados sensiveis e reforcando confidencialidade, integridade e disponibilidade.
 
 - [x] Trocar hasher temporario por hash de senha adequado.
-- [x] Criar camada de mascaramento para email, telefone e documentos.
+- [x] Criar mascaramento para o email sensivel atualmente modelado.
 - [x] Criar criptografia de dados sensiveis em repouso.
-- [x] Criar policy `SensitiveData.View`.
+- [x] Negar visualizacao de dados sensiveis para todas as roles, com auditoria.
 - [x] Criar audit log para tentativa de visualizacao de dados sensiveis.
 - [x] Garantir que logs da aplicacao nao exponham dados sensiveis.
 - [x] Preparar persistencia com EF Core/LINQ para prevenir SQL Injection.
@@ -325,16 +314,9 @@ Criterio de pronto:
 - Tentativas comuns de acesso indevido e payload suspeito possuem teste.
 - Frontend tem cobertura minima para utilitarios e fluxos criticos.
 
-## Ordem Recomendada de Execucao
+## Estado Consolidado
 
-1. Atualizar README e estrutura do repo para a fase RunBase.
-2. Criar backend ASP.NET Core com health check e Scalar.
-3. Implementar Auth e RBAC antes dos demais modulos.
-4. Implementar Users, Clients, Plans e Orders.
-5. Criar frontend Next.js com login e layout protegido.
-6. Conectar telas reais aos endpoints.
-7. Configurar testes e CI.
-8. Publicar em Azure.
+As fundacoes de backend, frontend, seguranca, persistencia, cloud e testes foram concluidas ate a V8. A proxima versao deve partir de uma nova necessidade de produto, sem reabrir etapas encerradas neste roadmap.
 
 ## Fora do Escopo Inicial
 

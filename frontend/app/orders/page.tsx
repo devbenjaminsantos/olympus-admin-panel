@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, RefreshCcw, Trash2, X } from "lucide-react";
 import { ProtectedPage } from "../../components/ProtectedPage";
 import { ApiError, apiFetch } from "../../lib/api";
+import { formatCurrency } from "../../lib/format";
 
 type PlanStage = "Trial" | "Free" | "Plus" | "Premium";
 type OrderStatus = "Pending" | "Processing" | "Completed" | "Cancelled";
@@ -364,13 +365,6 @@ function OrdersTable() {
       )}
     </div>
   );
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD"
-  }).format(value);
 }
 
 function getOrderErrorMessage(error: unknown): string {

@@ -88,12 +88,6 @@ builder.Services.AddAuthorization(options =>
                 .RequireAuthenticatedUser()
                 .RequireRole(policy.Value.Select(role => role.ToString())));
     }
-
-    options.AddPolicy(
-        AuthPolicies.ViewSensitiveData,
-        builder => builder
-            .RequireAuthenticatedUser()
-            .RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.ViewSensitiveData));
 });
 
 builder.Services.AddRateLimiter(options =>

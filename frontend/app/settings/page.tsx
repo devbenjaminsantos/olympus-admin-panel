@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { LogOut, RefreshCcw } from "lucide-react";
 import { ProtectedPage } from "../../components/ProtectedPage";
 import { apiFetch, logout } from "../../lib/api";
+import { formatDateTime } from "../../lib/format";
 import { readSession } from "../../lib/session";
 import type { UserProfile } from "../../lib/types";
 
@@ -104,11 +105,4 @@ function SettingsContent({ initialUser }: { initialUser: UserProfile }) {
       </section>
     </div>
   );
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
 }

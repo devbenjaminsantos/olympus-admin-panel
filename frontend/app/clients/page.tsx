@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, RefreshCcw, Trash2, X } from "lucide-react";
 import { ProtectedPage } from "../../components/ProtectedPage";
 import { ApiError, apiFetch } from "../../lib/api";
+import { formatDate } from "../../lib/format";
 
 type ClientStatus = "Active" | "Inactive" | "Suspended";
 type PlanStage = "Trial" | "Free" | "Plus" | "Premium";
@@ -355,10 +356,6 @@ function toApiDate(value: string): string | null {
 
 function toDateInputValue(value: string | null): string {
   return value ? value.slice(0, 10) : "";
-}
-
-function formatDate(value: string | null): string {
-  return value ? new Intl.DateTimeFormat("en-US").format(new Date(value)) : "-";
 }
 
 function getClientErrorMessage(error: unknown): string {

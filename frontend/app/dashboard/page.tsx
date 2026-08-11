@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ProtectedPage } from "../../components/ProtectedPage";
 import { apiFetch } from "../../lib/api";
+import { formatCurrency } from "../../lib/format";
 
 type Client = { id: string };
 type Plan = { id: string };
@@ -88,11 +89,4 @@ function getValue<T>(result: PromiseSettledResult<T>): T {
   }
 
   return [] as T;
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD"
-  }).format(value);
 }

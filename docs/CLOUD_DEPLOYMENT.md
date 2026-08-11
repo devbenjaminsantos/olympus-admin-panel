@@ -65,25 +65,11 @@ Security__SensitiveData__Key
 Frontend__AllowedOrigins__0
 ```
 
-For local/prototype deployment, `Frontend__AllowedOrigins__0` should be the Vercel frontend URL once available.
+Set `Frontend__AllowedOrigins__0` to the exact Vercel frontend origin.
 
-## Suggested API Hosting Paths
+## API Hosting - Render
 
-Simplest managed container options:
-
-```text
-Render Web Service
-Railway Service
-Fly.io App
-```
-
-AWS-native option:
-
-```text
-ECR repository -> ECS Fargate service -> public load balancer -> /health check
-```
-
-For the first public API deployment, Render is the simplest option because it can build directly from the repository Dockerfile, supports environment variables, exposes a public HTTPS URL, and supports HTTP health checks.
+Render builds the API directly from the repository Dockerfile, provides the public HTTPS endpoint, stores environment variables, and monitors the `/health` endpoint.
 
 Render manual settings for this monorepo:
 
@@ -96,26 +82,6 @@ Health Check Path: /health
 ```
 
 The repository also includes `render.yaml` with the same service shape for Blueprint-based setup.
-
-Railway is also a good prototype path. It supports environment variables and Dockerfile-based services, but the API must listen on the injected `PORT` environment variable.
-
-Fly.io is more infrastructure-oriented. It is portable and Docker-friendly, but requires more CLI/configuration work than Render or Railway.
-
-## Suggested AWS API Path
-
-Recommended AWS path if keeping API inside AWS:
-
-```text
-ECR repository -> ECS Fargate service -> public load balancer -> /health check
-```
-
-Initial ECS notes:
-
-- Container port: `8080`
-- Health check path: `/health`
-- CPU/memory: smallest development-friendly size
-- Secrets: use ECS task environment variables or AWS Secrets Manager
-- Network: allow outbound access to Neon Postgres on port `5432`
 
 ## Frontend
 
@@ -145,7 +111,7 @@ Pipeline checks:
 
 ```text
 Backend: restore, build, xUnit tests
-Frontend: npm ci, Next.js production build
+Frontend: npm ci, Vitest, Next.js production build, Playwright
 API container: Docker image build from backend/Dockerfile
 ```
 

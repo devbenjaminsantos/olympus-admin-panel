@@ -50,6 +50,7 @@ Cobre:
 - envio do access token;
 - rotacao unica do refresh token em requests concorrentes;
 - matriz de navegacao por role;
+- formatacao compartilhada de datas e valores;
 - respostas sem conteudo.
 
 Executar uma vez:

@@ -106,7 +106,7 @@ O backend vem primeiro porque autenticacao, roles, regras de dominio, banco e co
 | Banco | Neon Postgres |
 | Auth | JWT, Refresh Token, RBAC |
 | API Docs | Scalar |
-| Deploy | Azure Static Web Apps, Azure App Service |
+| Deploy | Vercel, Render |
 | CI/CD | GitHub Actions |
 | Testes | xUnit, Vitest, Playwright |
 
@@ -224,16 +224,16 @@ Como o projeto gerencia clientes, planos, pedidos, usuarios e futuramente dados 
 
 O foco da V4 sera o CID:
 
-- Confidencialidade: dados sensiveis mascarados por padrao, criptografia em repouso e permissao explicita para revelacao.
+- Confidencialidade: dados sensiveis mascarados por padrao, criptografia em repouso e visualizacao negada para todas as roles.
 - Integridade: validacoes, auditoria e protecao de alteracoes criticas.
 - Disponibilidade: protecoes contra abuso em endpoints sensiveis, como login e operacoes administrativas.
 
 ### Security & Privacy
 
 - [x] Hasher temporario substituido por PBKDF2 com salt por senha.
-- [x] Mascaramento padrao para email, telefone e documentos.
+- [x] Mascaramento do email sensivel atualmente modelado.
 - [x] Criptografia de dados sensiveis em repouso.
-- [x] Policy `SensitiveData.View`.
+- [x] Visualizacao de dados sensiveis negada para todas as roles, com auditoria.
 - [x] Audit log para tentativa de visualizacao de dados sensiveis.
 - [x] Logs sem exposicao de dados sensiveis.
 - [x] Persistencia preparada com EF Core/LINQ contra SQL Injection.
@@ -261,21 +261,14 @@ O foco da V4 sera o CID:
 - [x] 6.3 - Migrar `Refresh Tokens` para EF Core com rotacao, revoke, logout e fallback em memoria.
 - [x] 6.4 - Validacao final do fluxo completo: login, refresh, logout, roles, usuario inativo e ultimo admin ativo.
 
-## Proxima Etapa
+## Estado Atual
 
-A proxima etapa natural e iniciar a V4 com a fundacao de seguranca e privacidade.
-
-Escopo recomendado:
-
-1. Aplicar mascaramento sensivel nos demais contratos conforme novos dados entrarem.
-2. Criar fluxo de bloqueio persistente para reincidencia de tentativa sensivel.
-3. Continuar migracao EF Core por modulo.
-
-Depois disso, entram dados sinteticos e interacoes de cobranca/promocao com seguranca desde a base.
+As fundacoes planejadas ate a V8 foram concluidas: backend, frontend, RBAC, persistencia, seguranca, cloud, CI/CD e testes automatizados. Novas etapas devem ser registradas no roadmap conforme a proxima necessidade de produto.
 
 ## Documentos Relacionados
 
 - [Roadmap tecnico](./RUNBASE_ROADMAP.md)
 - [Regras de persistencia segura](./SECURITY_PERSISTENCE.md)
-- [Inicio da implementacao](./RUNBASE_START.md)
+- [Estrategia de testes](./TESTING.md)
+- [Deploy em cloud](./CLOUD_DEPLOYMENT.md)
 - [README tecnico em ingles](../README.md)

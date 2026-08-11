@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, Power, RefreshCcw, Trash2, X } from "lucide-react";
 import { ProtectedPage } from "../../components/ProtectedPage";
 import { ApiError, apiFetch } from "../../lib/api";
+import { formatCurrency, formatDate } from "../../lib/format";
 
 type PlanStage = "Trial" | "Free" | "Plus" | "Premium";
 type BillingCycle = "None" | "Monthly" | "Yearly";
@@ -377,17 +378,6 @@ function toApiDate(value: string): string | null {
 
 function toDateInputValue(value: string | null): string {
   return value ? value.slice(0, 10) : "";
-}
-
-function formatDate(value: string | null): string {
-  return value ? new Intl.DateTimeFormat("en-US").format(new Date(value)) : "-";
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD"
-  }).format(value);
 }
 
 function getPlanErrorMessage(error: unknown): string {

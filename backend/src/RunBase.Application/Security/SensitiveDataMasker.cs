@@ -19,28 +19,4 @@ public sealed class SensitiveDataMasker : ISensitiveDataMasker
 
         return $"{visible}***@{domain}";
     }
-
-    public string MaskPhone(string phone)
-    {
-        var digits = new string(phone.Where(char.IsDigit).ToArray());
-
-        if (digits.Length <= 4)
-        {
-            return "***";
-        }
-
-        return $"***-***-{digits[^4..]}";
-    }
-
-    public string MaskDocument(string document)
-    {
-        var digits = new string(document.Where(char.IsDigit).ToArray());
-
-        if (digits.Length <= 4)
-        {
-            return "***";
-        }
-
-        return $"***.***.***-{digits[^2..]}";
-    }
 }

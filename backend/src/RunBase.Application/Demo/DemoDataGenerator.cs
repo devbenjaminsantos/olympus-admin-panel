@@ -1,10 +1,10 @@
+using RunBase.Domain;
 using RunBase.Domain.Clients;
 using RunBase.Domain.Plans;
-using RunBase.Domain;
 
 namespace RunBase.Application.Demo;
 
-public sealed class DemoDataGenerator : IDemoDataGenerator
+public sealed class DemoDataGenerator
 {
     private static readonly string[] CompanyNames =
     [

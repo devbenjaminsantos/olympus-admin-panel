@@ -50,7 +50,8 @@ RunBase/
   docs/
     PROJETO_E_PLANEJAMENTO.md
     RUNBASE_ROADMAP.md
-    RUNBASE_START.md
+    SECURITY_PERSISTENCE.md
+    TESTING.md
 ```
 
 ## Backend Setup
@@ -93,21 +94,22 @@ Security__SensitiveData__Key
 
 ## Security Follow-ups
 
-The current frontend stores the authenticated session in `localStorage`. This is acceptable for the current development phase because the UI does not render unsafe HTML and the API avoids exposing tokens in URLs, but it should be revisited before production hardening.
+The current frontend stores the authenticated session in `localStorage`. This is a known security limitation: the UI does not render unsafe HTML and the API avoids exposing tokens in URLs, but an XSS vulnerability could still expose the session.
 
 Planned improvements:
 
 - Move refresh token handling to a `HttpOnly`, `Secure`, `SameSite` cookie.
 - Keep only short-lived access tokens in frontend memory where possible.
 - Store refresh tokens as hashes in the database instead of storing raw token values.
-- Revalidate the authentication flow after Azure deployment and HTTPS/CORS configuration.
+- Revalidate the authentication flow after deployment and every HTTPS/CORS configuration change.
 
 ## Documentation
 
 - [Product and planning notes in Portuguese](./docs/PROJETO_E_PLANEJAMENTO.md)
 - [RunBase roadmap](./docs/RUNBASE_ROADMAP.md)
-- [Implementation start plan](./docs/RUNBASE_START.md)
 - [Cloud deployment guide](./docs/CLOUD_DEPLOYMENT.md)
+- [Security persistence rules](./docs/SECURITY_PERSISTENCE.md)
+- [Testing strategy](./docs/TESTING.md)
 
 ## Author
 
