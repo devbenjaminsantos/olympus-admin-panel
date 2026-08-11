@@ -94,6 +94,29 @@ describe("API client", () => {
     expect(readSession()).toEqual(refreshedSession);
   });
 
+  it("shares one refresh operation between concurrent unauthorized requests", async () => {
+    writeSession(session);
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ message: "Unauthorized" }, 401))
+      .mockResolvedValueOnce(jsonResponse({ message: "Unauthorized" }, 401))
+      .mockResolvedValueOnce(jsonResponse(refreshedSession))
+      .mockResolvedValueOnce(jsonResponse([{ id: "client-id" }]))
+      .mockResolvedValueOnce(jsonResponse([{ id: "order-id" }]));
+
+    const [clients, orders] = await Promise.all([
+      apiFetch<Array<{ id: string }>>("/api/clients"),
+      apiFetch<Array<{ id: string }>>("/api/orders")
+    ]);
+
+    expect(clients).toEqual([{ id: "client-id" }]);
+    expect(orders).toEqual([{ id: "order-id" }]);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    expect(fetchMock.mock.calls.filter(([url]) =>
+      url === `${apiBaseUrl}/api/auth/refresh`
+    )).toHaveLength(1);
+    expect(readSession()).toEqual(refreshedSession);
+  });
+
   it("clears the session and reports the original 401 when refresh is rejected", async () => {
     writeSession(session);
     fetchMock

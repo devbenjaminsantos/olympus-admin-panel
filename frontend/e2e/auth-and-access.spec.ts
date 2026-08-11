@@ -1,0 +1,130 @@
+import { expect, test } from "@playwright/test";
+import type { Session } from "../lib/types";
+
+const apiUrl = "http://localhost:5140";
+const adminCredentials = {
+  email: "admin@runbase.local",
+  password: "Admin123!"
+};
+
+let adminSession: Session;
+let viewerCredentials: { email: string; password: string };
+
+test.describe.serial("authentication and role access", () => {
+  test.beforeAll(async ({ request }) => {
+    const loginResponse = await request.post(`${apiUrl}/api/auth/login`, {
+      data: adminCredentials
+    });
+    expect(loginResponse.ok()).toBeTruthy();
+    adminSession = (await loginResponse.json()) as Session;
+
+    viewerCredentials = {
+      email: `viewer-${Date.now()}@runbase.local`,
+      password: "Viewer123!"
+    };
+    const createViewerResponse = await request.post(`${apiUrl}/api/users`, {
+      data: {
+        name: "Playwright Viewer",
+        email: viewerCredentials.email,
+        password: viewerCredentials.password,
+        role: "Viewer",
+        status: "Active"
+      },
+      headers: {
+        authorization: `Bearer ${adminSession.accessToken}`
+      }
+    });
+    expect(createViewerResponse.ok()).toBeTruthy();
+  });
+
+  test("logs in and shows the complete admin navigation", async ({ page }) => {
+    await loginThroughUi(page, adminCredentials);
+
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Clients" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Plans" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Orders" })).toBeVisible();
+  });
+
+  test("hides admin navigation and denies a Viewer on the users page", async ({ page }) => {
+    await loginThroughUi(page, viewerCredentials);
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("link", { name: "Users" })).toHaveCount(0);
+
+    await page.goto("/users");
+
+    await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
+    await expect(page.getByText("Permission denied")).toBeVisible();
+  });
+
+  test("refreshes an invalid access token without returning to login", async ({ page }) => {
+    await setSession(page, {
+      ...adminSession,
+      accessToken: "invalid-access-token"
+    });
+
+    await page.goto("/dashboard");
+
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    const refreshedSession = await readBrowserSession(page);
+    expect(refreshedSession.accessToken).not.toBe("invalid-access-token");
+    expect(refreshedSession.refreshToken).not.toBe(adminSession.refreshToken);
+    adminSession = refreshedSession;
+  });
+
+  test("logs out, clears the browser session and returns to login", async ({ page }) => {
+    await setSession(page, adminSession);
+    await page.goto("/dashboard");
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Logout" }).press("Enter");
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { name: "RunBase" })).toBeVisible();
+    await expect(page.evaluate(() => window.localStorage.getItem("runbase.session"))).resolves.toBeNull();
+  });
+});
+
+async function loginThroughUi(
+  page: import("@playwright/test").Page,
+  credentials: { email: string; password: string }
+): Promise<void> {
+  await page.goto("/login");
+  await page.waitForLoadState("networkidle");
+  await page.getByLabel("Email").fill(credentials.email);
+  await page.getByLabel("Password").fill(credentials.password);
+  const loginResponsePromise = page.waitForResponse((response) =>
+    response.url() === `${apiUrl}/api/auth/login`
+  );
+  await page.getByLabel("Password").press("Enter");
+  const loginResponse = await loginResponsePromise;
+
+  expect(loginResponse.ok()).toBeTruthy();
+}
+
+async function setSession(
+  page: import("@playwright/test").Page,
+  session: Session
+): Promise<void> {
+  await page.goto("/login");
+  await page.evaluate((value) => {
+    window.localStorage.setItem("runbase.session", JSON.stringify(value));
+  }, session);
+}
+
+async function readBrowserSession(
+  page: import("@playwright/test").Page
+): Promise<Session> {
+  return page.evaluate(() => {
+    const raw = window.localStorage.getItem("runbase.session");
+
+    if (!raw) {
+      throw new Error("Expected an authenticated browser session.");
+    }
+
+    return JSON.parse(raw) as Session;
+  });
+}

@@ -39,7 +39,14 @@ export function ProtectedPage({
           return;
         }
 
-        writeSession({ ...session, user: profile });
+        const currentSession = readSession();
+
+        if (!currentSession) {
+          router.replace("/login");
+          return;
+        }
+
+        writeSession({ ...currentSession, user: profile });
         setUser(profile);
         setStatus(roleSet.has(profile.role) ? "ready" : "denied");
       })

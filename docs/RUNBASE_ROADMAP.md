@@ -312,10 +312,10 @@ Objetivo: cobrir funcionalidades criticas, fluxos reais e brechas de seguranca c
 - [x] Criar testes contra brechas comuns: requests invalidas, acesso sem token, role indevida, payload suspeito e dados sensiveis.
 - [x] Configurar Vitest para utilitarios do frontend.
 - [x] Criar testes Vitest para sessao, API client, guards e tratamento de erro.
-- [ ] Configurar Playwright.
-- [ ] Criar Playwright para login, dashboard e navegacao principal.
-- [ ] Criar Playwright para bloqueio por role e logout/refresh.
-- [ ] Integrar xUnit, Vitest e Playwright no GitHub Actions.
+- [x] Configurar Playwright.
+- [x] Criar Playwright para login, dashboard e navegacao principal.
+- [x] Criar Playwright para bloqueio por role e logout/refresh.
+- [x] Integrar xUnit, Vitest e Playwright no GitHub Actions.
 - [ ] Documentar estrategia de testes e comandos principais.
 
 Criterio de pronto:

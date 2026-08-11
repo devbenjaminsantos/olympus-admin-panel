@@ -2,6 +2,7 @@ import { clearSession, readSession, writeSession } from "./session";
 import type { AuthTokenResponse } from "./types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5140";
+let activeRefresh: Promise<boolean> | null = null;
 
 export class ApiError extends Error {
   constructor(
@@ -52,7 +53,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   var response = await fetchWithAccessToken(path, init);
 
   if (response.status === 401) {
-    var refreshed = await refreshSession();
+    var refreshed = await refreshSessionOnce();
 
     if (refreshed) {
       response = await fetchWithAccessToken(path, init);
@@ -82,6 +83,16 @@ async function fetchWithAccessToken(path: string, init: RequestInit): Promise<Re
     ...init,
     headers
   });
+}
+
+function refreshSessionOnce(): Promise<boolean> {
+  if (!activeRefresh) {
+    activeRefresh = refreshSession().finally(() => {
+      activeRefresh = null;
+    });
+  }
+
+  return activeRefresh;
 }
 
 async function refreshSession(): Promise<boolean> {
