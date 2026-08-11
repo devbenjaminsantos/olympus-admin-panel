@@ -5,6 +5,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RunBase.Application.Auth;
+using RunBase.Application.Clients;
+using RunBase.Application.Orders;
+using RunBase.Application.Plans;
+using RunBase.Application.Users;
+using RunBase.Domain;
+using RunBase.Domain.Clients;
+using RunBase.Domain.Orders;
+using RunBase.Domain.Plans;
 using RunBase.Domain.Users;
 
 namespace RunBase.Application.Tests.Api;
@@ -43,6 +51,232 @@ public sealed class ApiIntegrationTests
         Assert.False(string.IsNullOrWhiteSpace(token.RefreshToken));
         Assert.Equal("admin@runbase.local", token.User.Email);
         Assert.Equal(UserRole.Admin, token.User.Role);
+    }
+
+    [Fact]
+    public async Task AuthSession_RotatesRefreshTokenAndLogoutRevokesIt()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var initialToken = await LoginAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            initialToken.AccessToken);
+
+        var profileResponse = await client.GetAsync("/api/auth/me");
+        var profile = await ReadAsync<UserProfileResponse>(profileResponse);
+        var refreshResponse = await client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(initialToken.RefreshToken),
+            JsonOptions);
+        var refreshedToken = await ReadAsync<AuthTokenResponse>(refreshResponse);
+        var reusedRefreshResponse = await client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(initialToken.RefreshToken),
+            JsonOptions);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            refreshedToken.AccessToken);
+        var logoutResponse = await client.PostAsJsonAsync(
+            "/api/auth/logout",
+            new LogoutRequest(refreshedToken.RefreshToken),
+            JsonOptions);
+        var refreshAfterLogoutResponse = await client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(refreshedToken.RefreshToken),
+            JsonOptions);
+
+        Assert.Equal("admin@runbase.local", profile.Email);
+        Assert.NotEqual(initialToken.RefreshToken, refreshedToken.RefreshToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, reusedRefreshResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, refreshAfterLogoutResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UsersCrud_AsAdmin_PersistsUpdatesAndDeletesUser()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        await AuthorizeAsAdminAsync(client);
+        var email = $"manager-{Guid.NewGuid():N}@runbase.local";
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/users",
+            new CreateUserRequest(
+                "Integration Manager",
+                email,
+                "Manager123!",
+                UserRole.Manager,
+                UserStatus.Active),
+            JsonOptions);
+        var created = await ReadAsync<UserResponse>(createResponse);
+
+        var getResponse = await client.GetAsync($"/api/users/{created.Id}");
+        var fetched = await ReadAsync<UserResponse>(getResponse);
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/users/{created.Id}",
+            new UpdateUserRequest(
+                "Integration Viewer",
+                email,
+                UserRole.Viewer,
+                UserStatus.Active),
+            JsonOptions);
+        var updated = await ReadAsync<UserResponse>(updateResponse);
+        var deleteResponse = await client.DeleteAsync($"/api/users/{created.Id}");
+        var getAfterDeleteResponse = await client.GetAsync($"/api/users/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        Assert.Equal(UserRole.Manager, fetched.Role);
+        Assert.Equal("Integration Viewer", updated.Name);
+        Assert.Equal(UserRole.Viewer, updated.Role);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, getAfterDeleteResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ClientsCrud_AsAdmin_ReturnsOnlyMaskedEmailAndDeletesClient()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        await AuthorizeAsAdminAsync(client);
+        var email = $"client-{Guid.NewGuid():N}@runbase.local";
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/clients",
+            new CreateClientRequest(
+                "Integration Client",
+                email,
+                ClientStatus.Active,
+                PlanStage.Free,
+                null,
+                DataSource.Manual),
+            JsonOptions);
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var created = JsonSerializer.Deserialize<ClientResponse>(createBody, JsonOptions);
+        Assert.NotNull(created);
+
+        var getResponse = await client.GetAsync($"/api/clients/{created.Id}");
+        var fetched = await ReadAsync<ClientResponse>(getResponse);
+        var nextBillingAt = DateTimeOffset.UtcNow.AddMonths(1);
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/clients/{created.Id}",
+            new UpdateClientRequest(
+                "Integration Premium Client",
+                email,
+                ClientStatus.Active,
+                PlanStage.Premium,
+                DataSource.Imported,
+                nextBillingAt),
+            JsonOptions);
+        var updated = await ReadAsync<ClientResponse>(updateResponse);
+        var deleteResponse = await client.DeleteAsync($"/api/clients/{created.Id}");
+        var getAfterDeleteResponse = await client.GetAsync($"/api/clients/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        Assert.DoesNotContain(email, createBody, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(email, fetched.MaskedEmail);
+        Assert.Contains("***", fetched.MaskedEmail, StringComparison.Ordinal);
+        Assert.Equal(PlanStage.Premium, updated.PlanStage);
+        Assert.Equal(DataSource.Imported, updated.DataSource);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, getAfterDeleteResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task PlansCrud_AsAdmin_PersistsToggleAndDeletesPlan()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        await AuthorizeAsAdminAsync(client);
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/plans",
+            new CreatePlanRequest(
+                "Integration Free",
+                PlanStage.Free,
+                0,
+                BillingCycle.None,
+                true,
+                null),
+            JsonOptions);
+        var created = await ReadAsync<PlanResponse>(createResponse);
+
+        var getResponse = await client.GetAsync($"/api/plans/{created.Id}");
+        var fetched = await ReadAsync<PlanResponse>(getResponse);
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/plans/{created.Id}",
+            new UpdatePlanRequest(
+                "Integration Plus",
+                PlanStage.Plus,
+                29.90m,
+                BillingCycle.Monthly,
+                true,
+                DateTimeOffset.UtcNow.AddMonths(1)),
+            JsonOptions);
+        var updated = await ReadAsync<PlanResponse>(updateResponse);
+        var toggleResponse = await client.PatchAsJsonAsync(
+            $"/api/plans/{created.Id}/active",
+            new SetPlanActiveRequest(false),
+            JsonOptions);
+        var toggled = await ReadAsync<PlanResponse>(toggleResponse);
+        var deleteResponse = await client.DeleteAsync($"/api/plans/{created.Id}");
+        var getAfterDeleteResponse = await client.GetAsync($"/api/plans/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        Assert.Equal(PlanStage.Free, fetched.Stage);
+        Assert.Equal(PlanStage.Plus, updated.Stage);
+        Assert.Equal(29.90m, updated.Price);
+        Assert.False(toggled.IsActive);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, getAfterDeleteResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task OrdersCrud_AsAdmin_PersistsStatusAndDeletesOrder()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        await AuthorizeAsAdminAsync(client);
+        var customer = await CreateClientAsync(client);
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/orders",
+            new CreateOrderRequest(
+                customer.Id,
+                PlanStage.Plus,
+                OrderStatus.Pending,
+                49.90m),
+            JsonOptions);
+        var created = await ReadAsync<OrderResponse>(createResponse);
+
+        var getResponse = await client.GetAsync($"/api/orders/{created.Id}");
+        var fetched = await ReadAsync<OrderResponse>(getResponse);
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/orders/{created.Id}",
+            new UpdateOrderRequest(
+                customer.Id,
+                PlanStage.Premium,
+                OrderStatus.Processing,
+                79.90m),
+            JsonOptions);
+        var updated = await ReadAsync<OrderResponse>(updateResponse);
+        var statusResponse = await client.PatchAsJsonAsync(
+            $"/api/orders/{created.Id}/status",
+            new UpdateOrderStatusRequest(OrderStatus.Completed),
+            JsonOptions);
+        var completed = await ReadAsync<OrderResponse>(statusResponse);
+        var deleteResponse = await client.DeleteAsync($"/api/orders/{created.Id}");
+        var getAfterDeleteResponse = await client.GetAsync($"/api/orders/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        Assert.Equal(OrderStatus.Pending, fetched.Status);
+        Assert.Equal(PlanStage.Premium, updated.PlanStage);
+        Assert.Equal(79.90m, updated.FinalAmount);
+        Assert.Equal(OrderStatus.Completed, completed.Status);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, getAfterDeleteResponse.StatusCode);
     }
 
     [Fact]
@@ -130,6 +364,40 @@ public sealed class ApiIntegrationTests
             {
                 builder.UseSetting("environment", "Development");
             });
+    }
+
+    private static async Task AuthorizeAsAdminAsync(HttpClient client)
+    {
+        var token = await LoginAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            token.AccessToken);
+    }
+
+    private static async Task<ClientResponse> CreateClientAsync(HttpClient client)
+    {
+        var response = await client.PostAsJsonAsync(
+            "/api/clients",
+            new CreateClientRequest(
+                "Order Integration Client",
+                $"order-client-{Guid.NewGuid():N}@runbase.local",
+                ClientStatus.Active,
+                PlanStage.Free,
+                null,
+                DataSource.Manual),
+            JsonOptions);
+
+        return await ReadAsync<ClientResponse>(response);
+    }
+
+    private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
+    {
+        response.EnsureSuccessStatusCode();
+        var value = await response.Content.ReadFromJsonAsync<T>(JsonOptions);
+
+        Assert.NotNull(value);
+
+        return value;
     }
 
     private static async Task<AuthTokenResponse> LoginAsync(

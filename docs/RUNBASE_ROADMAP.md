@@ -308,7 +308,7 @@ Objetivo: cobrir funcionalidades criticas, fluxos reais e brechas de seguranca c
 - [x] Revisar cobertura xUnit atual dos Services.
 - [x] Criar primeira suite de integracao da API para health, login, headers, auth/RBAC, validacao e auditoria sensivel.
 - [ ] Ampliar xUnit para regras de seguranca, RBAC e auditoria sensivel.
-- [ ] Criar testes de integracao da API para auth, CRUDs e headers de seguranca.
+- [x] Criar testes de integracao da API para auth, CRUDs e headers de seguranca.
 - [ ] Criar testes contra brechas comuns: requests invalidas, acesso sem token, role indevida, payload suspeito e dados sensiveis.
 - [ ] Configurar Vitest para utilitarios do frontend.
 - [ ] Criar testes Vitest para sessao, API client, guards e tratamento de erro.
