@@ -91,6 +91,41 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
+    public async Task RefreshAsync_WithExpiredRefreshToken_ReturnsInvalidRefreshToken()
+    {
+        var refreshTokens = new FakeRefreshTokenRepository();
+        var service = CreateService(refreshTokens: refreshTokens);
+        await refreshTokens.SaveAsync(new RefreshToken(
+            "expired-refresh-token",
+            ActiveUserId,
+            DateTimeOffset.UtcNow.AddMinutes(-1),
+            DateTimeOffset.UtcNow.AddDays(-7)));
+
+        var result = await service.RefreshAsync(new RefreshTokenRequest("expired-refresh-token"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(AuthError.InvalidRefreshToken, result.Error);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WithRevokedRefreshToken_ReturnsInvalidRefreshToken()
+    {
+        var refreshTokens = new FakeRefreshTokenRepository();
+        var service = CreateService(refreshTokens: refreshTokens);
+        await refreshTokens.SaveAsync(new RefreshToken(
+            "revoked-refresh-token",
+            ActiveUserId,
+            DateTimeOffset.UtcNow.AddDays(7),
+            DateTimeOffset.UtcNow.AddMinutes(-1),
+            DateTimeOffset.UtcNow));
+
+        var result = await service.RefreshAsync(new RefreshTokenRequest("revoked-refresh-token"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(AuthError.InvalidRefreshToken, result.Error);
+    }
+
+    [Fact]
     public async Task LogoutAsync_WithValidRefreshToken_RevokesRefreshToken()
     {
         var refreshTokens = new FakeRefreshTokenRepository();

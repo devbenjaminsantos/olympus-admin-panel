@@ -350,11 +350,13 @@ public sealed class ApiIntegrationTests
         var firstBody = await firstResponse.Content.ReadAsStringAsync();
         var secondResponse = await client.GetAsync($"/api/clients/{clientId}/sensitive");
         var secondBody = await secondResponse.Content.ReadAsStringAsync();
+        var thirdResponse = await client.GetAsync($"/api/clients/{clientId}/sensitive");
 
         Assert.Equal(HttpStatusCode.Forbidden, firstResponse.StatusCode);
         Assert.Contains("Denied", firstBody, StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.Forbidden, secondResponse.StatusCode);
         Assert.Contains("Blocked", secondBody, StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.TooManyRequests, thirdResponse.StatusCode);
     }
 
     private static WebApplicationFactory<Program> CreateFactory()

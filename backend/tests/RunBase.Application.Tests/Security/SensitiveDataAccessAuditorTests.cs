@@ -35,6 +35,25 @@ public sealed class SensitiveDataAccessAuditorTests
         Assert.Equal(SensitiveDataAuditOutcome.Blocked, repository.Entries[1].Outcome);
     }
 
+    [Fact]
+    public async Task RecordAttemptAsync_DifferentResourceStartsIndependentAuditSequence()
+    {
+        var repository = new FakeSensitiveDataAuditRepository();
+        var auditor = new SensitiveDataAccessAuditor(repository);
+        var firstResource = CreateAttempt();
+        var secondResource = firstResource with { ResourceId = Guid.NewGuid() };
+
+        await auditor.RecordAttemptAsync(firstResource);
+        var blockedDecision = await auditor.RecordAttemptAsync(firstResource);
+        var independentDecision = await auditor.RecordAttemptAsync(secondResource);
+
+        Assert.Equal(SensitiveDataAuditOutcome.Blocked, blockedDecision.Outcome);
+        Assert.Equal(2, blockedDecision.AttemptCount);
+        Assert.Equal(SensitiveDataAuditOutcome.Denied, independentDecision.Outcome);
+        Assert.Equal(1, independentDecision.AttemptCount);
+        Assert.Equal(3, repository.Entries.Count);
+    }
+
     private static SensitiveDataAccessAttempt CreateAttempt()
     {
         return new SensitiveDataAccessAttempt(

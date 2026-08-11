@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.IdentityModel.Tokens;
 using RunBase.Application;
 using RunBase.Application.Auth;
@@ -26,8 +28,13 @@ const string SensitiveDataRateLimitPolicy = "sensitive-data";
 const string FrontendCorsPolicy = "frontend";
 
 builder.Services.AddOpenApi();
+builder.Services.Configure<RouteHandlerOptions>(options =>
+{
+    options.ThrowOnBadRequest = false;
+});
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
+    options.SerializerOptions.Encoder = JavaScriptEncoder.Default;
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
 });
 builder.Services.AddApplication();
