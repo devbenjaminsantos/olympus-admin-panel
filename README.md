@@ -77,6 +77,8 @@ docker run --rm -p 8080:8080 runbase-api:local
 Local endpoints:
 
 - API health: `http://localhost:5140/health`
+- Initial account status: `GET http://localhost:5140/api/auth/setup`
+- Initial account creation: `POST http://localhost:5140/api/auth/setup`
 - Auth login: `POST http://localhost:5140/api/auth/login`
 - Auth refresh: `POST http://localhost:5140/api/auth/refresh`
 - Current user: `GET http://localhost:5140/api/auth/me`
@@ -88,7 +90,7 @@ Required production environment values:
 ```text
 ConnectionStrings__DefaultConnection
 Auth__Jwt__SigningKey
-Auth__SeedAdmin__Password
+Auth__Bootstrap__SetupKey
 Security__SensitiveData__Key
 ```
 

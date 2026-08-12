@@ -6,6 +6,54 @@ namespace RunBase.Application.Tests.Auth;
 public sealed class AuthServiceTests
 {
     private static readonly Guid ActiveUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private const string SetupKey = "test-initial-setup-key";
+
+    [Fact]
+    public async Task GetInitialSetupStatusAsync_WithoutUsers_ReturnsRequired()
+    {
+        var service = CreateService(includeAdmin: false);
+
+        var result = await service.GetInitialSetupStatusAsync();
+
+        Assert.True(result.SetupRequired);
+    }
+
+    [Fact]
+    public async Task CreateInitialAccountAsync_CreatesOnlyOneActiveAdmin()
+    {
+        var service = CreateService(includeAdmin: false);
+        var request = new InitialAccountRequest(
+            "First Admin",
+            "first-admin@runbase.local",
+            "SecureAdmin123!",
+            SetupKey);
+
+        var firstResult = await service.CreateInitialAccountAsync(request);
+        var secondResult = await service.CreateInitialAccountAsync(request);
+
+        Assert.True(firstResult.Succeeded);
+        Assert.Equal(UserRole.Admin, firstResult.Value!.User.Role);
+        Assert.Equal(UserStatus.Active, firstResult.Value.User.Status);
+        Assert.False(secondResult.Succeeded);
+        Assert.Equal(AuthError.InitialSetupAlreadyCompleted, secondResult.Error);
+    }
+
+    [Fact]
+    public async Task CreateInitialAccountAsync_WithInvalidSetupKey_DoesNotCreateUser()
+    {
+        var service = CreateService(includeAdmin: false);
+
+        var result = await service.CreateInitialAccountAsync(new InitialAccountRequest(
+            "First Admin",
+            "first-admin@runbase.local",
+            "SecureAdmin123!",
+            "invalid-setup-key"));
+        var status = await service.GetInitialSetupStatusAsync();
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(AuthError.InvalidSetupKey, result.Error);
+        Assert.True(status.SetupRequired);
+    }
 
     [Fact]
     public async Task LoginAsync_WithValidCredentials_ReturnsAccessToken()
@@ -153,17 +201,22 @@ public sealed class AuthServiceTests
 
     private static AuthService CreateService(
         FakeRefreshTokenRepository? refreshTokens = null,
+        bool includeAdmin = true,
         params User[] extraUsers)
     {
-        var users = new List<User>
+        var users = new List<User>();
+
+        if (includeAdmin)
         {
-            CreateUser(ActiveUserId, "admin@runbase.local", UserStatus.Active)
-        };
+            users.Add(CreateUser(ActiveUserId, "admin@runbase.local", UserStatus.Active));
+        }
+
         users.AddRange(extraUsers);
 
         return new AuthService(
             new FakeUserRepository(users),
             new FakePasswordHasher(),
+            new FakeSetupKeyValidator(),
             new FakeAccessTokenService(),
             new FakeRefreshTokenService(),
             refreshTokens ?? new FakeRefreshTokenRepository());
@@ -187,10 +240,33 @@ public sealed class AuthServiceTests
     private sealed class FakeUserRepository : IUserRepository
     {
         private readonly Dictionary<Guid, User> _users;
+        private readonly object _initialSetupLock = new();
 
         public FakeUserRepository(IReadOnlyList<User> users)
         {
             _users = users.ToDictionary(user => user.Id);
+        }
+
+        public Task<bool> IsInitialSetupRequiredAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_users.Count == 0);
+        }
+
+        public Task<bool> TryCreateInitialAdminAsync(
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            lock (_initialSetupLock)
+            {
+                if (_users.Count != 0)
+                {
+                    return Task.FromResult(false);
+                }
+
+                _users[user.Id] = user;
+
+                return Task.FromResult(true);
+            }
         }
 
         public Task<IReadOnlyList<User>> ListAsync(CancellationToken cancellationToken = default)
@@ -248,6 +324,14 @@ public sealed class AuthServiceTests
         public bool Verify(string password, string passwordHash)
         {
             return password == passwordHash;
+        }
+    }
+
+    private sealed class FakeSetupKeyValidator : ISetupKeyValidator
+    {
+        public bool IsValid(string setupKey)
+        {
+            return setupKey == SetupKey;
         }
     }
 

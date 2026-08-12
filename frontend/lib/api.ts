@@ -1,5 +1,9 @@
 import { clearSession, readSession, writeSession } from "./session";
-import type { AuthTokenResponse } from "./types";
+import type {
+  AuthTokenResponse,
+  InitialAccountInput,
+  InitialSetupStatus
+} from "./types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5140";
 let activeRefresh: Promise<boolean> | null = null;
@@ -11,6 +15,34 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
+}
+
+export async function getInitialSetupStatus(): Promise<InitialSetupStatus> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/setup`);
+
+  if (!response.ok) {
+    throw new ApiError("Initial setup status failed", response.status);
+  }
+
+  return response.json() as Promise<InitialSetupStatus>;
+}
+
+export async function createInitialAccount(
+  input: InitialAccountInput
+): Promise<AuthTokenResponse> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/setup`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) {
+    throw new ApiError("Initial account setup failed", response.status);
+  }
+
+  return response.json() as Promise<AuthTokenResponse>;
 }
 
 export async function login(email: string, password: string): Promise<AuthTokenResponse> {

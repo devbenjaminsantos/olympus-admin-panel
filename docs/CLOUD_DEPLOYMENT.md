@@ -43,7 +43,7 @@ docker run --rm -p 8080:8080 \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e ConnectionStrings__DefaultConnection='<connection-string>' \
   -e Auth__Jwt__SigningKey='<strong-secret>' \
-  -e Auth__SeedAdmin__Password='<strong-seed-password>' \
+  -e Auth__Bootstrap__SetupKey='<strong-one-time-setup-secret>' \
   -e Security__SensitiveData__Key='<base64-32-byte-key>' \
   runbase-api:local
 ```
@@ -60,12 +60,16 @@ curl http://localhost:8080/health
 ASPNETCORE_ENVIRONMENT=Production
 ConnectionStrings__DefaultConnection
 Auth__Jwt__SigningKey
-Auth__SeedAdmin__Password
+Auth__Bootstrap__SetupKey
 Security__SensitiveData__Key
 Frontend__AllowedOrigins__0
 ```
 
 Set `Frontend__AllowedOrigins__0` to the exact Vercel frontend origin.
+
+`Auth__Bootstrap__SetupKey` must contain at least 32 bytes in production. Configure it in Render before deploying this version. It authorizes only the initial administrator creation and is never used as a login credential.
+
+When the database has no users, the login page opens the initial account form. A database still containing the previous automatic `admin@runbase.local` account is also eligible: completing setup replaces only that legacy account, preserves every other user, and invalidates the legacy sessions. Once the legacy account is gone and a real account exists, the setup endpoint returns `409 Conflict` and cannot create additional users.
 
 ## API Hosting - Render
 

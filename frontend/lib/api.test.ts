@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiFetch, login, logout } from "./api";
+import {
+  ApiError,
+  apiFetch,
+  createInitialAccount,
+  getInitialSetupStatus,
+  login,
+  logout
+} from "./api";
 import { readSession, writeSession } from "./session";
 import type { Session } from "./types";
 
@@ -49,6 +56,31 @@ describe("API client", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email: "admin@runbase.local", password: "Admin123!" })
     });
+  });
+
+  it("reads whether initial account setup is required", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ setupRequired: true }));
+
+    await expect(getInitialSetupStatus()).resolves.toEqual({ setupRequired: true });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBaseUrl}/api/auth/setup`);
+  });
+
+  it("creates the initial account without sending a role", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(session));
+    const input = {
+      name: "RunBase Admin",
+      email: "admin@runbase.local",
+      password: "SecureAdmin123!",
+      setupKey: "test-initial-setup-key"
+    };
+
+    await expect(createInitialAccount(input)).resolves.toEqual(session);
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBaseUrl}/api/auth/setup`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    expect(fetchMock.mock.calls[0][1]?.body).not.toContain("role");
   });
 
   it("exposes the response status through ApiError", async () => {

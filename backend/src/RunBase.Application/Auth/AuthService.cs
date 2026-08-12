@@ -6,6 +6,7 @@ public sealed class AuthService : IAuthService
 {
     private readonly IUserRepository _users;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly ISetupKeyValidator _setupKeyValidator;
     private readonly IAccessTokenService _accessTokenService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IRefreshTokenRepository _refreshTokens;
@@ -13,15 +14,54 @@ public sealed class AuthService : IAuthService
     public AuthService(
         IUserRepository users,
         IPasswordHasher passwordHasher,
+        ISetupKeyValidator setupKeyValidator,
         IAccessTokenService accessTokenService,
         IRefreshTokenService refreshTokenService,
         IRefreshTokenRepository refreshTokens)
     {
         _users = users;
         _passwordHasher = passwordHasher;
+        _setupKeyValidator = setupKeyValidator;
         _accessTokenService = accessTokenService;
         _refreshTokenService = refreshTokenService;
         _refreshTokens = refreshTokens;
+    }
+
+    public async Task<InitialSetupStatusResponse> GetInitialSetupStatusAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var setupRequired = await _users.IsInitialSetupRequiredAsync(cancellationToken);
+
+        return new InitialSetupStatusResponse(setupRequired);
+    }
+
+    public async Task<AuthResult<AuthTokenResponse>> CreateInitialAccountAsync(
+        InitialAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_setupKeyValidator.IsValid(request.SetupKey))
+        {
+            return AuthResult<AuthTokenResponse>.Failure(AuthError.InvalidSetupKey);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var user = new User(
+            Guid.NewGuid(),
+            request.Name.Trim(),
+            request.Email.Trim(),
+            _passwordHasher.Hash(request.Password),
+            UserRole.Admin,
+            UserStatus.Active,
+            now,
+            now);
+
+        if (!await _users.TryCreateInitialAdminAsync(user, cancellationToken))
+        {
+            return AuthResult<AuthTokenResponse>.Failure(AuthError.InitialSetupAlreadyCompleted);
+        }
+
+        return AuthResult<AuthTokenResponse>.Success(
+            await CreateTokenResponseAsync(user, cancellationToken));
     }
 
     public async Task<AuthResult<AuthTokenResponse>> LoginAsync(
@@ -40,14 +80,8 @@ public sealed class AuthService : IAuthService
             return AuthResult<AuthTokenResponse>.Failure(AuthError.InactiveUser);
         }
 
-        var accessToken = _accessTokenService.Create(user);
-        var refreshToken = _refreshTokenService.Create(user);
-        await _refreshTokens.SaveAsync(refreshToken, cancellationToken);
-
-        return AuthResult<AuthTokenResponse>.Success(ToTokenResponse(
-            user,
-            accessToken,
-            refreshToken));
+        return AuthResult<AuthTokenResponse>.Success(
+            await CreateTokenResponseAsync(user, cancellationToken));
     }
 
     public async Task<AuthResult<AuthTokenResponse>> RefreshAsync(
@@ -133,6 +167,17 @@ public sealed class AuthService : IAuthService
             user.Email,
             user.Role,
             user.Status);
+    }
+
+    private async Task<AuthTokenResponse> CreateTokenResponseAsync(
+        User user,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = _accessTokenService.Create(user);
+        var refreshToken = _refreshTokenService.Create(user);
+        await _refreshTokens.SaveAsync(refreshToken, cancellationToken);
+
+        return ToTokenResponse(user, accessToken, refreshToken);
     }
 
     private static AuthTokenResponse ToTokenResponse(

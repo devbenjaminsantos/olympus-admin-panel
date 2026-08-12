@@ -40,7 +40,8 @@ export default defineConfig({
       env: {
         ASPNETCORE_ENVIRONMENT: "Development",
         ASPNETCORE_URLS: apiUrl,
-        ConnectionStrings__DefaultConnection: ""
+        ConnectionStrings__DefaultConnection: "",
+        DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: "false"
       },
       reuseExistingServer: false,
       timeout: 120_000,

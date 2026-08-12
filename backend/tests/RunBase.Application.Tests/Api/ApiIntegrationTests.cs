@@ -19,6 +19,9 @@ namespace RunBase.Application.Tests.Api;
 
 public sealed class ApiIntegrationTests
 {
+    private const string AdminEmail = "admin@runbase.local";
+    private const string AdminPassword = "Admin123!Secure";
+    private const string SetupKey = "runbase-development-setup-key-change-before-production";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter(allowIntegerValues: false) }
@@ -40,7 +43,59 @@ public sealed class ApiIntegrationTests
     }
 
     [Fact]
-    public async Task Login_WithSeedAdmin_ReturnsTokenPairAndAdminProfile()
+    public async Task InitialSetup_CreatesAdminAndClosesRegistration()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var initialStatus = await client.GetFromJsonAsync<InitialSetupStatusResponse>(
+            "/api/auth/setup",
+            JsonOptions);
+        var setupResponse = await client.PostAsJsonAsync(
+            "/api/auth/setup",
+            CreateInitialAccountRequest(),
+            JsonOptions);
+        var token = await ReadAsync<AuthTokenResponse>(setupResponse);
+        var completedStatus = await client.GetFromJsonAsync<InitialSetupStatusResponse>(
+            "/api/auth/setup",
+            JsonOptions);
+        var repeatedSetupResponse = await client.PostAsJsonAsync(
+            "/api/auth/setup",
+            CreateInitialAccountRequest(),
+            JsonOptions);
+
+        Assert.True(initialStatus!.SetupRequired);
+        Assert.False(string.IsNullOrWhiteSpace(token.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(token.RefreshToken));
+        Assert.Equal(AdminEmail, token.User.Email);
+        Assert.Equal(UserRole.Admin, token.User.Role);
+        Assert.False(completedStatus!.SetupRequired);
+        Assert.Equal(HttpStatusCode.Conflict, repeatedSetupResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task InitialSetup_WithConcurrentRequests_CreatesOnlyOneAdmin()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var responses = await Task.WhenAll(
+            client.PostAsJsonAsync("/api/auth/setup", CreateInitialAccountRequest(), JsonOptions),
+            client.PostAsJsonAsync(
+                "/api/auth/setup",
+                new InitialAccountRequest(
+                    "Competing Admin",
+                    "competing-admin@runbase.local",
+                    "CompetingAdmin123!",
+                    SetupKey),
+                JsonOptions));
+
+        Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
+        Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task Login_WithCreatedAdmin_ReturnsTokenPairAndAdminProfile()
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
@@ -49,7 +104,7 @@ public sealed class ApiIntegrationTests
 
         Assert.False(string.IsNullOrWhiteSpace(token.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(token.RefreshToken));
-        Assert.Equal("admin@runbase.local", token.User.Email);
+        Assert.Equal(AdminEmail, token.User.Email);
         Assert.Equal(UserRole.Admin, token.User.Role);
     }
 
@@ -321,6 +376,44 @@ public sealed class ApiIntegrationTests
     }
 
     [Fact]
+    public async Task DeletedUser_WithPreviouslyIssuedToken_ReturnsUnauthorized()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var adminToken = await LoginAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            adminToken.AccessToken);
+        var supportEmail = $"deleted-support-{Guid.NewGuid():N}@runbase.local";
+        const string supportPassword = "Support123!Secure";
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/users",
+            new CreateUserRequest(
+                "Deleted Support",
+                supportEmail,
+                supportPassword,
+                UserRole.Support,
+                UserStatus.Active),
+            JsonOptions);
+        var support = await ReadAsync<UserResponse>(createResponse);
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var supportToken = await LoginAsync(client, supportEmail, supportPassword);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            adminToken.AccessToken);
+        var deleteResponse = await client.DeleteAsync($"/api/users/{support.Id}");
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            supportToken.AccessToken);
+        var staleSessionResponse = await client.GetAsync("/api/orders");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, staleSessionResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Login_WithInvalidPayload_ReturnsBadRequest()
     {
         await using var factory = CreateFactory();
@@ -404,9 +497,14 @@ public sealed class ApiIntegrationTests
 
     private static async Task<AuthTokenResponse> LoginAsync(
         HttpClient client,
-        string email = "admin@runbase.local",
-        string password = "Admin123!")
+        string email = AdminEmail,
+        string password = AdminPassword)
     {
+        if (email == AdminEmail)
+        {
+            await EnsureInitialAdminAsync(client);
+        }
+
         var response = await client.PostAsJsonAsync(
             "/api/auth/login",
             new
@@ -422,5 +520,33 @@ public sealed class ApiIntegrationTests
         Assert.NotNull(token);
 
         return token;
+    }
+
+    private static async Task EnsureInitialAdminAsync(HttpClient client)
+    {
+        var status = await client.GetFromJsonAsync<InitialSetupStatusResponse>(
+            "/api/auth/setup",
+            JsonOptions);
+
+        if (status?.SetupRequired != true)
+        {
+            return;
+        }
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/setup",
+            CreateInitialAccountRequest(),
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+    }
+
+    private static InitialAccountRequest CreateInitialAccountRequest()
+    {
+        return new InitialAccountRequest(
+            "RunBase Admin",
+            AdminEmail,
+            AdminPassword,
+            SetupKey);
     }
 }

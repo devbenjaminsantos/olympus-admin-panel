@@ -1,5 +1,5 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using RunBase.Application.Auth;
 using RunBase.Domain.Users;
 using RunBase.Infrastructure.Persistence;
@@ -9,24 +9,67 @@ namespace RunBase.Infrastructure.Auth;
 public sealed class EfUserRepository : IUserRepository
 {
     private readonly RunBaseDbContext _dbContext;
-    private readonly AuthSeedOptions _seedOptions;
-    private readonly IPasswordHasher _passwordHasher;
 
-    public EfUserRepository(
-        RunBaseDbContext dbContext,
-        IOptions<AuthSeedOptions> seedOptions,
-        IPasswordHasher passwordHasher)
+    public EfUserRepository(RunBaseDbContext dbContext)
     {
         _dbContext = dbContext;
-        _seedOptions = seedOptions.Value;
-        _passwordHasher = passwordHasher;
+    }
+
+    public async Task<bool> IsInitialSetupRequiredAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var hasUsers = await _dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(cancellationToken);
+        var hasLegacySeed = await _dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(
+                user => user.Id == LegacySeedAdmin.Id &&
+                    user.Email.ToUpper() == LegacySeedAdmin.NormalizedEmail,
+                cancellationToken);
+
+        return !hasUsers || hasLegacySeed;
+    }
+
+    public async Task<bool> TryCreateInitialAdminAsync(
+        User user,
+        CancellationToken cancellationToken = default)
+    {
+        var executionStrategy = _dbContext.Database.CreateExecutionStrategy();
+
+        return await executionStrategy.ExecuteAsync(async () =>
+        {
+            _dbContext.ChangeTracker.Clear();
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken);
+            var hasUsers = await _dbContext.Users.AnyAsync(cancellationToken);
+            var legacySeed = await _dbContext.Users.FirstOrDefaultAsync(
+                existingUser => existingUser.Id == LegacySeedAdmin.Id &&
+                    existingUser.Email.ToUpper() == LegacySeedAdmin.NormalizedEmail,
+                cancellationToken);
+
+            if (hasUsers && legacySeed is null)
+            {
+                return false;
+            }
+
+            if (legacySeed is not null)
+            {
+                _dbContext.Users.Remove(legacySeed);
+            }
+
+            await _dbContext.Users.AddAsync(user, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return true;
+        });
     }
 
     public async Task<IReadOnlyList<User>> ListAsync(
         CancellationToken cancellationToken = default)
     {
-        await EnsureSeedAdminAsync(cancellationToken);
-
         return await _dbContext.Users
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -36,8 +79,6 @@ public sealed class EfUserRepository : IUserRepository
         string email,
         CancellationToken cancellationToken = default)
     {
-        await EnsureSeedAdminAsync(cancellationToken);
-
         var normalizedEmail = NormalizeEmail(email);
 
         return await _dbContext.Users.FirstOrDefaultAsync(
@@ -49,8 +90,6 @@ public sealed class EfUserRepository : IUserRepository
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        await EnsureSeedAdminAsync(cancellationToken);
-
         return await _dbContext.Users.FirstOrDefaultAsync(
             user => user.Id == id,
             cancellationToken);
@@ -61,8 +100,6 @@ public sealed class EfUserRepository : IUserRepository
         Guid? exceptUserId = null,
         CancellationToken cancellationToken = default)
     {
-        await EnsureSeedAdminAsync(cancellationToken);
-
         var normalizedEmail = NormalizeEmail(email);
 
         return await _dbContext.Users.AnyAsync(
@@ -105,34 +142,6 @@ public sealed class EfUserRepository : IUserRepository
     {
         _dbContext.Users.Remove(user);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task EnsureSeedAdminAsync(CancellationToken cancellationToken)
-    {
-        var seedId = Guid.Parse(_seedOptions.Id);
-        var seedEmail = NormalizeEmail(_seedOptions.Email);
-        var seedExists = await _dbContext.Users.AnyAsync(
-            user => user.Id == seedId || user.Email.ToUpper() == seedEmail,
-            cancellationToken);
-
-        if (seedExists)
-        {
-            return;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var admin = new User(
-            seedId,
-            _seedOptions.Name,
-            _seedOptions.Email,
-            _passwordHasher.Hash(_seedOptions.Password),
-            UserRole.Admin,
-            UserStatus.Active,
-            now,
-            now);
-
-        await _dbContext.Users.AddAsync(admin, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 

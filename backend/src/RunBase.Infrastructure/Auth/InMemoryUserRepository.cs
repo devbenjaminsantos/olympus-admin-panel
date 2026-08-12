@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Options;
 using RunBase.Application.Auth;
 using RunBase.Domain.Users;
 
@@ -8,25 +7,39 @@ namespace RunBase.Infrastructure.Auth;
 public sealed class InMemoryUserRepository : IUserRepository
 {
     private readonly ConcurrentDictionary<Guid, User> _users = new();
+    private readonly object _initialSetupLock = new();
 
-    public InMemoryUserRepository(
-        IOptions<AuthSeedOptions> seedOptions,
-        IPasswordHasher passwordHasher)
+    public Task<bool> IsInitialSetupRequiredAsync(
+        CancellationToken cancellationToken = default)
     {
-        var seed = seedOptions.Value;
-        var now = DateTimeOffset.UtcNow;
+        var setupRequired = _users.IsEmpty || _users.Values.Any(LegacySeedAdmin.IsLegacySeed);
 
-        var admin = new User(
-                Guid.Parse(seed.Id),
-                seed.Name,
-                seed.Email,
-                passwordHasher.Hash(seed.Password),
-                UserRole.Admin,
-                UserStatus.Active,
-                now,
-                now);
+        return Task.FromResult(setupRequired);
+    }
 
-        _users[admin.Id] = admin;
+    public Task<bool> TryCreateInitialAdminAsync(
+        User user,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_initialSetupLock)
+        {
+            var existingUsers = _users.Values.ToList();
+            var legacySeed = existingUsers.FirstOrDefault(LegacySeedAdmin.IsLegacySeed);
+
+            if (existingUsers.Count != 0 && legacySeed is null)
+            {
+                return Task.FromResult(false);
+            }
+
+            if (legacySeed is not null)
+            {
+                _users.TryRemove(legacySeed.Id, out _);
+            }
+
+            _users[user.Id] = user;
+
+            return Task.FromResult(true);
+        }
     }
 
     public Task<IReadOnlyList<User>> ListAsync(

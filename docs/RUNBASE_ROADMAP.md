@@ -314,9 +314,30 @@ Criterio de pronto:
 - Tentativas comuns de acesso indevido e payload suspeito possuem teste.
 - Frontend tem cobertura minima para utilitarios e fluxos criticos.
 
+### V9 - Bootstrap de Conta Administrativa
+
+Objetivo: substituir a credencial Admin automatica por uma configuracao inicial segura e realizada pelo proprietario.
+
+- [x] Remover criacao automatica do Admin nos repositorios.
+- [x] Criar consulta publica do estado de configuracao inicial.
+- [x] Criar bootstrap atomico da primeira conta Admin.
+- [x] Exigir chave de setup separada da senha de login.
+- [x] Impedir escolha publica de role ou status.
+- [x] Encerrar o bootstrap permanentemente apos a primeira conta real.
+- [x] Substituir com seguranca o Admin seed legado sem remover os demais usuarios.
+- [x] Revalidar existencia, status e role do usuario em tokens autenticados.
+- [x] Integrar criacao inicial na tela de login.
+- [x] Cobrir setup, concorrencia, login e fechamento do endpoint com testes.
+
+Criterio de pronto:
+
+- Nenhuma credencial de login e criada automaticamente.
+- Somente uma conta inicial pode assumir a role Admin.
+- Contas posteriores continuam sob controle do CRUD administrativo com RBAC.
+
 ## Estado Consolidado
 
-As fundacoes de backend, frontend, seguranca, persistencia, cloud e testes foram concluidas ate a V8. A proxima versao deve partir de uma nova necessidade de produto, sem reabrir etapas encerradas neste roadmap.
+As fundacoes de backend, frontend, seguranca, persistencia, cloud, testes e bootstrap administrativo foram concluidas ate a V9. A proxima versao deve partir da reformulacao planejada do frontend, sem reabrir etapas encerradas neste roadmap.
 
 ## Fora do Escopo Inicial
 

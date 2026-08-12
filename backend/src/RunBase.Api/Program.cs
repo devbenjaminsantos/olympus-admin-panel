@@ -24,6 +24,7 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 const string LoginRateLimitPolicy = "login";
+const string InitialSetupRateLimitPolicy = "initial-setup";
 const string SensitiveDataRateLimitPolicy = "sensitive-data";
 const string FrontendCorsPolicy = "frontend";
 
@@ -76,6 +77,30 @@ builder.Services
             ValidAudience = jwtOptions.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey))
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!Guid.TryParse(userIdValue, out var userId))
+                {
+                    context.Fail("Invalid user identity.");
+                    return;
+                }
+
+                var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+                var user = await users.GetByIdAsync(userId, context.HttpContext.RequestAborted);
+                var tokenRole = context.Principal?.FindFirstValue(ClaimTypes.Role);
+
+                if (user is null ||
+                    !user.CanAuthenticate ||
+                    !string.Equals(tokenRole, user.Role.ToString(), StringComparison.Ordinal))
+                {
+                    context.Fail("User session is no longer valid.");
+                }
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -111,6 +136,16 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy(InitialSetupRateLimitPolicy, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            GetClientPartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(10),
                 QueueLimit = 0
             }));
 
@@ -198,6 +233,37 @@ app.MapGet("/", () =>
 
 var auth = app.MapGroup("/api/auth")
     .WithTags("Auth");
+
+auth.MapGet("/setup", async (
+    IAuthService authService,
+    CancellationToken cancellationToken) =>
+{
+    var status = await authService.GetInitialSetupStatusAsync(cancellationToken);
+
+    return Results.Ok(status);
+})
+.WithName("GetInitialSetupStatus")
+.WithSummary("Returns whether the first administrator account must be created.");
+
+auth.MapPost("/setup", async (
+    InitialAccountRequest request,
+    IAuthService authService,
+    CancellationToken cancellationToken) =>
+{
+    var result = await authService.CreateInitialAccountAsync(request, cancellationToken);
+
+    return result.Error switch
+    {
+        null => Results.Ok(result.Value),
+        AuthError.InvalidSetupKey => Results.Unauthorized(),
+        AuthError.InitialSetupAlreadyCompleted => Results.Conflict(),
+        _ => Results.BadRequest()
+    };
+})
+.AddEndpointFilter<ValidationFilter<InitialAccountRequest>>()
+.RequireRateLimiting(InitialSetupRateLimitPolicy)
+.WithName("CreateInitialAccount")
+.WithSummary("Creates the first administrator account and permanently closes initial setup.");
 
 auth.MapPost("/login", async (
     LoginRequest request,
@@ -794,11 +860,13 @@ static void ValidateProductionConfiguration(
         throw new InvalidOperationException("Security:SensitiveData:Key must be configured outside development.");
     }
 
-    var seedAdminPassword = configuration["Auth:SeedAdmin:Password"];
+    var setupKey = configuration["Auth:Bootstrap:SetupKey"];
 
-    if (string.IsNullOrWhiteSpace(seedAdminPassword) || seedAdminPassword == "Admin123!")
+    if (string.IsNullOrWhiteSpace(setupKey) ||
+        setupKey == "runbase-development-setup-key-change-before-production" ||
+        Encoding.UTF8.GetByteCount(setupKey) < 32)
     {
-        throw new InvalidOperationException("Auth:SeedAdmin:Password must be changed outside development.");
+        throw new InvalidOperationException("Auth:Bootstrap:SetupKey must be a production secret with at least 256 bits.");
     }
 }
 

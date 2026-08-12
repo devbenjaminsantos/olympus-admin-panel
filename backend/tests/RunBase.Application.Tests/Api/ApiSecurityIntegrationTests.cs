@@ -17,6 +17,9 @@ namespace RunBase.Application.Tests.Api;
 
 public sealed class ApiSecurityIntegrationTests
 {
+    private const string AdminEmail = "admin@runbase.local";
+    private const string AdminPassword = "Admin123!Secure";
+    private const string SetupKey = "runbase-development-setup-key-change-before-production";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter(allowIntegerValues: false) }
@@ -81,6 +84,28 @@ public sealed class ApiSecurityIntegrationTests
         var response = await client.GetAsync("/api/users");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InitialSetup_WithInvalidKey_ReturnsUnauthorizedAndKeepsSetupOpen()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/setup",
+            new InitialAccountRequest(
+                "Unauthorized Admin",
+                "unauthorized-admin@runbase.local",
+                "UnauthorizedAdmin123!",
+                "invalid-initial-setup-key"),
+            JsonOptions);
+        var status = await client.GetFromJsonAsync<InitialSetupStatusResponse>(
+            "/api/auth/setup",
+            JsonOptions);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.True(status!.SetupRequired);
     }
 
     [Fact]
@@ -251,9 +276,14 @@ public sealed class ApiSecurityIntegrationTests
 
     private static async Task<AuthTokenResponse> LoginAsync(
         HttpClient client,
-        string email = "admin@runbase.local",
-        string password = "Admin123!")
+        string email = AdminEmail,
+        string password = AdminPassword)
     {
+        if (email == AdminEmail)
+        {
+            await EnsureInitialAdminAsync(client);
+        }
+
         var response = await client.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest(email, password),
@@ -264,5 +294,28 @@ public sealed class ApiSecurityIntegrationTests
         Assert.NotNull(token);
 
         return token;
+    }
+
+    private static async Task EnsureInitialAdminAsync(HttpClient client)
+    {
+        var status = await client.GetFromJsonAsync<InitialSetupStatusResponse>(
+            "/api/auth/setup",
+            JsonOptions);
+
+        if (status?.SetupRequired != true)
+        {
+            return;
+        }
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/setup",
+            new InitialAccountRequest(
+                "RunBase Admin",
+                AdminEmail,
+                AdminPassword,
+                SetupKey),
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
     }
 }

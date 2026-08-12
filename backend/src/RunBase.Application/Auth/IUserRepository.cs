@@ -4,6 +4,13 @@ namespace RunBase.Application.Auth;
 
 public interface IUserRepository
 {
+    Task<bool> IsInitialSetupRequiredAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<bool> TryCreateInitialAdminAsync(
+        User user,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<User>> ListAsync(
         CancellationToken cancellationToken = default);
 

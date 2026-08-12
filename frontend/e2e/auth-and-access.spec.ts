@@ -4,25 +4,40 @@ import type { Session } from "../lib/types";
 const apiUrl = "http://localhost:5140";
 const adminCredentials = {
   email: "admin@runbase.local",
-  password: "Admin123!"
+  password: "Admin123!Secure"
 };
+const setupKey = "runbase-development-setup-key-change-before-production";
 
 let adminSession: Session;
 let viewerCredentials: { email: string; password: string };
 
 test.describe.serial("authentication and role access", () => {
-  test.beforeAll(async ({ request }) => {
-    const loginResponse = await request.post(`${apiUrl}/api/auth/login`, {
-      data: adminCredentials
-    });
-    expect(loginResponse.ok()).toBeTruthy();
-    adminSession = (await loginResponse.json()) as Session;
-
+  test.beforeAll(async () => {
     viewerCredentials = {
       email: `viewer-${Date.now()}@runbase.local`,
       password: "Viewer123!"
     };
-    const createViewerResponse = await request.post(`${apiUrl}/api/users`, {
+  });
+
+  test("creates the first administrator account through the setup screen", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: "Create administrator" })).toBeVisible();
+    await page.getByLabel("Name").fill("RunBase Admin");
+    await page.getByLabel("Email").fill(adminCredentials.email);
+    await page.getByLabel("Password", { exact: true }).fill(adminCredentials.password);
+    await page.getByLabel("Confirm password").fill(adminCredentials.password);
+    await page.getByLabel("Setup key").fill(setupKey);
+    const setupResponsePromise = page.waitForResponse((response) =>
+      response.url() === `${apiUrl}/api/auth/setup` && response.request().method() === "POST"
+    );
+    await page.getByRole("button", { name: "Create account" }).click();
+    const setupResponse = await setupResponsePromise;
+
+    expect(setupResponse.ok()).toBeTruthy();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    adminSession = await readBrowserSession(page);
+
+    const createViewerResponse = await page.request.post(`${apiUrl}/api/users`, {
       data: {
         name: "Playwright Viewer",
         email: viewerCredentials.email,

@@ -132,6 +132,25 @@ public sealed class UsersServiceTests
             _users = users.ToDictionary(user => user.Id);
         }
 
+        public Task<bool> IsInitialSetupRequiredAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_users.Count == 0);
+        }
+
+        public Task<bool> TryCreateInitialAdminAsync(
+            User user,
+            CancellationToken cancellationToken = default)
+        {
+            if (_users.Count != 0)
+            {
+                return Task.FromResult(false);
+            }
+
+            _users[user.Id] = user;
+
+            return Task.FromResult(true);
+        }
+
         public Task<IReadOnlyList<User>> ListAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<User>>(_users.Values.ToList());

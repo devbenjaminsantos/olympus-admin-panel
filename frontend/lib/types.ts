@@ -17,6 +17,17 @@ export type AuthTokenResponse = {
 
 export type Session = AuthTokenResponse;
 
+export type InitialSetupStatus = {
+  setupRequired: boolean;
+};
+
+export type InitialAccountInput = {
+  name: string;
+  email: string;
+  password: string;
+  setupKey: string;
+};
+
 export type NavItem = {
   href: string;
   label: string;

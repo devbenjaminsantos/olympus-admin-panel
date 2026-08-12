@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using RunBase.Application.Auth;
 using RunBase.Application.Clients;
 using RunBase.Application.Notifications;
 using RunBase.Application.Orders;
@@ -15,6 +16,18 @@ namespace RunBase.Application.Tests.Security;
 
 public sealed class PublicRequestValidationTests
 {
+    [Fact]
+    public void InitialAccountRequest_WithShortPassword_IsInvalid()
+    {
+        var request = new InitialAccountRequest(
+            "RunBase Admin",
+            "admin@runbase.local",
+            "short",
+            "test-initial-setup-key");
+
+        Assert.False(IsValid(request));
+    }
+
     [Fact]
     public void CreateUserRequest_WithInvalidEmail_IsInvalid()
     {

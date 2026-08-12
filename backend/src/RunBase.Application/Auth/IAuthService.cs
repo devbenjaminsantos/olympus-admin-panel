@@ -2,6 +2,13 @@ namespace RunBase.Application.Auth;
 
 public interface IAuthService
 {
+    Task<InitialSetupStatusResponse> GetInitialSetupStatusAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<AuthResult<AuthTokenResponse>> CreateInitialAccountAsync(
+        InitialAccountRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<AuthResult<AuthTokenResponse>> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default);

@@ -51,11 +51,12 @@ public static class DependencyInjection
             services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
         }
 
-        services.Configure<AuthSeedOptions>(configuration.GetSection(AuthSeedOptions.SectionName));
+        services.Configure<BootstrapOptions>(configuration.GetSection(BootstrapOptions.SectionName));
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<SensitiveDataProtectionOptions>(
             configuration.GetSection(SensitiveDataProtectionOptions.SectionName));
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<ISetupKeyValidator, ConfiguredSetupKeyValidator>();
         services.AddSingleton<ISensitiveDataProtector, AesGcmSensitiveDataProtector>();
         services.AddSingleton<IAccessTokenService, JwtAccessTokenService>();
         services.AddSingleton<IRefreshTokenService, RandomRefreshTokenService>();
