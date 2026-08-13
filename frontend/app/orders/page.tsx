@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Edit2, Plus, RefreshCcw, Trash2, X } from "lucide-react";
+import { Edit2, Plus, RefreshCcw, Search, ShieldCheck, Trash2, X } from "lucide-react";
 import { ProtectedPage } from "../../components/ProtectedPage";
 import { ApiError, apiFetch } from "../../lib/api";
 import { formatCurrency } from "../../lib/format";
@@ -50,6 +50,7 @@ function OrdersTable() {
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"All" | OrderStatus>("All");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<OrderRow | null>(null);
   const [form, setForm] = useState<OrderForm>(emptyForm);
@@ -67,13 +68,9 @@ function OrdersTable() {
   const filteredOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    if (!normalizedQuery) {
-      return orders;
-    }
-
     return orders.filter((order) => {
       const client = clientById.get(order.clientId);
-      return [
+      const matchesQuery = !normalizedQuery || [
         client?.name ?? order.clientId,
         client?.maskedEmail ?? "",
         order.planStage,
@@ -83,8 +80,11 @@ function OrdersTable() {
         .join(" ")
         .toLowerCase()
         .includes(normalizedQuery);
+      const matchesStatus = statusFilter === "All" || order.status === statusFilter;
+
+      return matchesQuery && matchesStatus;
     });
-  }, [clientById, orders, query]);
+  }, [clientById, orders, query, statusFilter]);
 
   async function loadData() {
     setState("loading");
@@ -209,160 +209,159 @@ function OrdersTable() {
     return <div className="state state-error">Unable to load orders</div>;
   }
 
+  const openOrders = orders.filter((order) => order.status === "Pending" || order.status === "Processing").length;
+
   return (
-    <div className="stack">
-      <div className="toolbar">
-        <input
-          className="input toolbar-search"
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search orders"
-          type="search"
-          value={query}
-        />
-        <button className="button button-secondary" onClick={() => void loadData()} type="button">
-          <RefreshCcw aria-hidden size={16} />
-        </button>
-        <button className="button" disabled={clients.length === 0} onClick={openCreateForm} type="button">
-          <Plus aria-hidden size={16} />
-          <span>New order</span>
-        </button>
+    <div className="orders-page">
+      <div className="data-toolbar">
+        <div className="data-toolbar-summary">
+          <strong>{orders.length} orders</strong>
+          <span>{openOrders} awaiting resolution or completion</span>
+        </div>
+        <div className="data-toolbar-actions">
+          <label className="search-field">
+            <Search aria-hidden size={17} />
+            <span className="sr-only">Search orders</span>
+            <input onChange={(event) => setQuery(event.target.value)} placeholder="Search orders" type="search" value={query} />
+          </label>
+          <button aria-label="Refresh orders" className="icon-button" onClick={() => void loadData()} title="Refresh orders" type="button">
+            <RefreshCcw aria-hidden size={16} />
+          </button>
+          <button className="button" disabled={clients.length === 0} onClick={openCreateForm} type="button">
+            <Plus aria-hidden size={16} />
+            <span>New order</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="segmented-control" aria-label="Filter orders by status">
+        {(["All", "Pending", "Processing", "Completed", "Cancelled"] as const).map((status) => (
+          <button
+            aria-pressed={statusFilter === status}
+            className={statusFilter === status ? "segmented-control-active" : ""}
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            type="button"
+          >
+            {status}
+          </button>
+        ))}
       </div>
 
       {clients.length === 0 ? <div className="state">Create a client before creating orders.</div> : null}
       {message ? <div className="alert alert-error">{message}</div> : null}
 
-      {isFormOpen ? (
-        <form className="form-panel" onSubmit={handleSubmit}>
-          <div className="form-panel-header">
-            <strong>{editingOrder ? "Edit order" : "Create order"}</strong>
-            <button className="icon-button" onClick={closeForm} title="Close" type="button">
-              <X aria-hidden size={16} />
-            </button>
-          </div>
-          <div className="form-grid">
-            <div className="field">
-              <label htmlFor="order-client">Client</label>
-              <select
-                className="input"
-                id="order-client"
-                onChange={(event) => setForm({ ...form, clientId: event.target.value })}
-                required
-                value={form.clientId}
-              >
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} ({client.maskedEmail})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="order-plan">Plan</label>
-              <select
-                className="input"
-                id="order-plan"
-                onChange={(event) => setForm({ ...form, planStage: event.target.value as PlanStage })}
-                value={form.planStage}
-              >
-                <option value="Trial">Trial</option>
-                <option value="Free">Free</option>
-                <option value="Plus">Plus</option>
-                <option value="Premium">Premium</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="order-status">Status</label>
-              <select
-                className="input"
-                id="order-status"
-                onChange={(event) => setForm({ ...form, status: event.target.value as OrderStatus })}
-                value={form.status}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="order-amount">Final amount</label>
-              <input
-                className="input"
-                id="order-amount"
-                min={0}
-                onChange={(event) => setForm({ ...form, finalAmount: event.target.value })}
-                required
-                step="0.01"
-                type="number"
-                value={form.finalAmount}
-              />
-            </div>
-          </div>
-          <div className="form-actions">
-            <button className="button button-secondary" onClick={closeForm} type="button">
-              Cancel
-            </button>
-            <button className="button" disabled={isSaving} type="submit">
-              {isSaving ? "Saving" : "Save order"}
-            </button>
-          </div>
-        </form>
-      ) : null}
-
-      {orders.length === 0 ? (
-        <div className="state">No orders</div>
-      ) : filteredOrders.length === 0 ? (
-        <div className="state">No results</div>
-      ) : (
-        <div className="table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th>Plan</th>
-                <th>Status</th>
-                <th>Amount</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order) => {
-                const client = clientById.get(order.clientId);
-
-                return (
-                  <tr key={order.id}>
-                    <td>{client ? `${client.name} (${client.maskedEmail})` : order.clientId}</td>
-                    <td><span className="badge">{order.planStage}</span></td>
-                    <td>
-                      <select
-                        className="input table-select"
-                        onChange={(event) => void handleStatusChange(order, event.target.value as OrderStatus)}
-                        value={order.status}
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
-                    </td>
-                    <td>{formatCurrency(order.finalAmount)}</td>
-                    <td>
-                      <div className="row-actions">
-                        <button className="icon-button" onClick={() => openEditForm(order)} title="Edit order" type="button">
-                          <Edit2 aria-hidden size={16} />
-                        </button>
-                        <button className="icon-button danger-button" onClick={() => void handleDelete(order)} title="Delete order" type="button">
-                          <Trash2 aria-hidden size={16} />
-                        </button>
-                      </div>
-                    </td>
+      <div className={`orders-workspace ${isFormOpen ? "orders-workspace-panel-open" : ""}`}>
+        <section className="data-table-panel" aria-label="Order records">
+          {orders.length === 0 ? (
+            <div className="state">No orders have been recorded yet.</div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="state">No orders match the current filters.</div>
+          ) : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order) => {
+                    const client = clientById.get(order.clientId);
+
+                    return (
+                      <tr key={order.id}>
+                        <td>
+                          <div className="order-client">
+                            <strong>{client?.name ?? "Client unavailable"}</strong>
+                            {client ? <span className="protected-value"><ShieldCheck aria-hidden size={13} /> {client.maskedEmail}</span> : <span className="order-id">{order.clientId}</span>}
+                          </div>
+                        </td>
+                        <td><span className={`plan-badge plan-badge-${order.planStage.toLowerCase()}`}>{order.planStage}</span></td>
+                        <td>
+                          <select aria-label={`Status for ${client?.name ?? "order"}`} className={`input table-select order-status-select order-status-${order.status.toLowerCase()}`} onChange={(event) => void handleStatusChange(order, event.target.value as OrderStatus)} value={order.status}>
+                            <option value="Pending">Pending</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        </td>
+                        <td><span className="order-amount">{formatCurrency(order.finalAmount)}</span></td>
+                        <td>
+                          <div className="row-actions">
+                            <button aria-label={`Edit order for ${client?.name ?? "client"}`} className="icon-button" onClick={() => openEditForm(order)} title="Edit order" type="button">
+                              <Edit2 aria-hidden size={16} />
+                            </button>
+                            <button aria-label={`Delete order for ${client?.name ?? "client"}`} className="icon-button danger-button" onClick={() => void handleDelete(order)} title="Delete order" type="button">
+                              <Trash2 aria-hidden size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {isFormOpen ? (
+          <aside className="detail-panel order-detail-panel" aria-labelledby="order-panel-title">
+            <form onSubmit={handleSubmit}>
+              <div className="detail-panel-header">
+                <div>
+                  <span className="dashboard-kicker">Order record</span>
+                  <h2 id="order-panel-title">{editingOrder ? "Edit order" : "New order"}</h2>
+                </div>
+                <button aria-label="Close order panel" className="icon-button" onClick={closeForm} title="Close" type="button">
+                  <X aria-hidden size={16} />
+                </button>
+              </div>
+              <div className="detail-panel-fields">
+                <div className="field">
+                  <label htmlFor="order-client">Client</label>
+                  <select className="input" id="order-client" onChange={(event) => setForm({ ...form, clientId: event.target.value })} required value={form.clientId}>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>{client.name} ({client.maskedEmail})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="order-plan">Plan</label>
+                  <select className="input" id="order-plan" onChange={(event) => setForm({ ...form, planStage: event.target.value as PlanStage })} value={form.planStage}>
+                    <option value="Trial">Trial</option>
+                    <option value="Free">Free</option>
+                    <option value="Plus">Plus</option>
+                    <option value="Premium">Premium</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="order-status">Status</label>
+                  <select className="input" id="order-status" onChange={(event) => setForm({ ...form, status: event.target.value as OrderStatus })} value={form.status}>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="order-amount">Final amount</label>
+                  <input className="input" id="order-amount" min={0} onChange={(event) => setForm({ ...form, finalAmount: event.target.value })} required step="0.01" type="number" value={form.finalAmount} />
+                </div>
+              </div>
+              <div className="detail-panel-actions">
+                <button className="button button-secondary" onClick={closeForm} type="button">Cancel</button>
+                <button className="button" disabled={isSaving} type="submit">{isSaving ? "Saving" : "Save order"}</button>
+              </div>
+            </form>
+          </aside>
+        ) : null}
+      </div>
     </div>
   );
 }

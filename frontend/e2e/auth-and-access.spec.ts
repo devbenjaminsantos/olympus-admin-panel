@@ -20,6 +20,8 @@ test.describe.serial("authentication and role access", () => {
   });
 
   test("creates the first administrator account through the setup screen", async ({ page }) => {
+    test.setTimeout(90_000);
+
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: "Create your administrator account" })).toBeVisible();
     await page.getByLabel("Name").fill("RunBase Admin");

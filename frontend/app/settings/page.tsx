@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, RefreshCcw } from "lucide-react";
+import { Clock3, LogOut, RefreshCcw, ShieldCheck } from "lucide-react";
 import { ProtectedPage } from "../../components/ProtectedPage";
 import { apiFetch, logout } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
@@ -55,49 +55,50 @@ function SettingsContent({ initialUser }: { initialUser: UserProfile }) {
 
   return (
     <div className="settings-grid">
-      <section className="settings-panel">
-        <div className="form-panel-header">
-          <strong>Profile</strong>
-          <button className="button button-secondary" disabled={isRefreshing} onClick={() => void refreshProfile()} type="button">
+      <section className="settings-panel settings-profile-panel">
+        <div className="settings-panel-header">
+          <div>
+            <span className="dashboard-kicker">Signed-in identity</span>
+            <h2>Profile</h2>
+          </div>
+          <button aria-label="Refresh profile" className="icon-button" disabled={isRefreshing} onClick={() => void refreshProfile()} title="Refresh profile" type="button">
             <RefreshCcw aria-hidden size={16} />
-            <span>{isRefreshing ? "Refreshing" : "Refresh"}</span>
           </button>
         </div>
-        <div className="table-wrap">
-          <table className="table">
-            <tbody>
-              <tr>
-                <th>Name</th>
-                <td>{user.name}</td>
-              </tr>
-              <tr>
-                <th>Email</th>
-                <td>{user.email}</td>
-              </tr>
-              <tr>
-                <th>Role</th>
-                <td><span className="badge">{user.role}</span></td>
-              </tr>
-              <tr>
-                <th>Status</th>
-                <td>{user.status}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="settings-identity">
+          <span aria-hidden className="settings-avatar">{getInitials(user.name)}</span>
+          <div>
+            <strong>{user.name}</strong>
+            <span>{user.email}</span>
+          </div>
+        </div>
+        <div className="profile-facts">
+          <div>
+            <span>Role</span>
+            <strong className={`role-badge role-badge-${user.role.toLowerCase()}`}>{user.role}</strong>
+          </div>
+          <div>
+            <span>Account status</span>
+            <strong className={`status-pill user-status-${user.status.toLowerCase()}`}>{user.status}</strong>
+          </div>
         </div>
         {message ? <div className="alert alert-info">{message}</div> : null}
       </section>
 
-      <section className="settings-panel">
-        <div className="form-panel-header">
-          <strong>Session</strong>
+      <section className="settings-panel settings-session-panel">
+        <div className="settings-panel-header">
+          <div>
+            <span className="dashboard-kicker">Current access</span>
+            <h2>Session</h2>
+          </div>
+          <ShieldCheck aria-hidden className="settings-panel-icon" size={21} />
         </div>
         <div className="session-summary">
           <div>
-            <span>Access token expires</span>
+            <span><Clock3 aria-hidden size={15} /> Access token expires</span>
             <strong>{expiresAt ? formatDateTime(expiresAt) : "-"}</strong>
           </div>
-          <button className="button" onClick={() => void handleLogout()} type="button">
+          <button className="button button-danger" onClick={() => void handleLogout()} type="button">
             <LogOut aria-hidden size={16} />
             <span>Logout</span>
           </button>
@@ -105,4 +106,8 @@ function SettingsContent({ initialUser }: { initialUser: UserProfile }) {
       </section>
     </div>
   );
+}
+
+function getInitials(name: string): string {
+  return name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
