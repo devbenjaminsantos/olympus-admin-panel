@@ -21,7 +21,7 @@ test.describe.serial("authentication and role access", () => {
 
   test("creates the first administrator account through the setup screen", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Create administrator" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create your administrator account" })).toBeVisible();
     await page.getByLabel("Name").fill("RunBase Admin");
     await page.getByLabel("Email").fill(adminCredentials.email);
     await page.getByLabel("Password", { exact: true }).fill(adminCredentials.password);
@@ -98,7 +98,8 @@ test.describe.serial("authentication and role access", () => {
     await page.getByRole("button", { name: "Logout" }).press("Enter");
 
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole("heading", { name: "RunBase" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+    await expect(page.getByAltText("RunBase").first()).toBeVisible();
     await expect(page.evaluate(() => window.localStorage.getItem("runbase.session"))).resolves.toBeNull();
   });
 });

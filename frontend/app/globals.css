@@ -54,55 +54,146 @@ a {
 .login-page {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 480px);
+  grid-template-columns: minmax(480px, 1.08fr) minmax(440px, 0.92fr);
   background: #060914;
 }
 
 .login-brand {
   position: relative;
-  display: flex;
   min-height: 100vh;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
-  padding: 48px;
+  background: #060914;
+  padding: 44px;
 }
 
 .login-brand::before {
   position: absolute;
-  inset: 0;
+  inset: auto -18% -12% 12%;
   background: image-set(url("/logo.png") 1x);
-  background-position: center;
+  background-position: center bottom;
   background-repeat: no-repeat;
-  background-size: min(72vw, 1120px) auto;
+  background-size: min(80vw, 980px) auto;
   content: "";
-  opacity: 0.94;
+  opacity: 0.11;
+  transform: rotate(-7deg);
 }
 
 .login-brand::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgb(6 9 20 / 0%) 0%, rgb(6 9 20 / 18%) 58%, #060914 100%);
+  background: linear-gradient(180deg, rgb(6 9 20 / 12%) 0%, rgb(6 9 20 / 78%) 100%);
   content: "";
+}
+
+.login-brand-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 3%) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(135deg, #000 0%, rgb(0 0 0 / 32%) 50%, transparent 88%);
+}
+
+.login-brand-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 100%;
+  min-height: calc(100vh - 88px);
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.login-brand-header {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.login-brand-logo {
+  width: 230px;
+  height: auto;
+  mix-blend-mode: screen;
+  object-fit: contain;
+}
+
+.login-brand-header span,
+.login-brand-kicker {
+  color: #8ca3c7;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.login-brand-message {
+  max-width: 580px;
+  padding-bottom: 10vh;
+}
+
+.login-brand-message h2 {
+  max-width: 480px;
+  margin: 13px 0 18px;
+  color: #f8fbff;
+  font-size: clamp(2.35rem, 4.5vw, 4.6rem);
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.02;
+}
+
+.login-brand-message p {
+  max-width: 425px;
+  margin: 0;
+  color: #aab8cc;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.login-brand-footer {
+  display: flex;
+  gap: 22px;
+  color: #d6e1f1;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.login-brand-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-brand-footer svg {
+  color: #52d697;
 }
 
 .login-panel {
   display: flex;
   min-height: 100vh;
   align-items: center;
-  background: #ffffff;
-  padding: 40px;
+  justify-content: center;
+  background: #f7f9fc;
+  padding: 48px clamp(36px, 6vw, 104px);
 }
 
 .login-form {
   width: 100%;
+  max-width: 416px;
 }
 
-.login-logo {
+.login-mobile-brand {
   display: none;
-  width: min(260px, 78vw);
+}
+
+.login-mobile-brand img {
+  width: min(232px, 70vw);
   height: auto;
-  margin-bottom: 28px;
+  mix-blend-mode: screen;
+}
+
+.login-form-heading {
+  margin-bottom: 32px;
 }
 
 .eyebrow {
@@ -110,25 +201,40 @@ a {
   color: var(--brand);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.login-form .eyebrow {
+  margin-bottom: 12px;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .login-form h1 {
   margin: 0;
-  font-size: 2rem;
-  line-height: 1.15;
+  color: #101828;
+  font-size: clamp(2.2rem, 3vw, 3rem);
+  font-weight: 700;
+  line-height: 1.07;
 }
 
-.login-form p {
-  margin: 12px 0 28px;
-  color: var(--muted);
-  line-height: 1.55;
+.login-form-heading > p:last-child {
+  max-width: 340px;
+  margin: 13px 0 0;
+  color: #667085;
+  font-size: 0.96rem;
+  line-height: 1.6;
 }
 
 .field {
   display: grid;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+.login-form .field {
+  gap: 7px;
+  margin-bottom: 18px;
 }
 
 .field label {
@@ -165,9 +271,22 @@ a {
   padding: 0 12px;
 }
 
+.login-form .input {
+  min-height: 48px;
+  border-radius: 6px;
+  border-color: #d0d7e2;
+  color: #101828;
+  padding: 0 14px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
 .input:focus {
   border-color: var(--brand);
   box-shadow: 0 0 0 3px rgb(17 109 255 / 14%);
+}
+
+.login-form .input:focus {
+  box-shadow: 0 0 0 3px rgb(17 109 255 / 12%);
 }
 
 .button {
@@ -182,6 +301,22 @@ a {
   color: #ffffff;
   font-weight: 800;
   padding: 0 16px;
+}
+
+.login-form .button {
+  border-radius: 6px;
+}
+
+.login-submit {
+  min-height: 50px;
+  margin-top: 4px;
+  box-shadow: 0 10px 22px rgb(17 109 255 / 18%);
+}
+
+.login-form .input:focus-visible,
+.login-form .button:focus-visible {
+  outline: 3px solid rgb(17 109 255 / 30%);
+  outline-offset: 2px;
 }
 
 .button:hover {
@@ -212,6 +347,44 @@ a {
   margin: 16px 0 0;
   padding: 12px;
   font-size: 0.92rem;
+}
+
+.login-form .alert {
+  border-radius: 6px;
+}
+
+.login-state {
+  margin-bottom: 20px;
+}
+
+.login-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid #e5eaf1;
+  margin-top: 32px;
+  padding-top: 18px;
+  color: #7b8799;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.login-form-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.login-form-footer span:last-child {
+  color: #4f5e73;
+}
+
+.login-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #52b788;
 }
 
 .alert-error {
@@ -541,11 +714,14 @@ a {
 
   .login-panel {
     min-height: 100vh;
-    padding: 28px;
+    align-items: flex-start;
+    background: #f7f9fc;
+    padding: 32px 28px 48px;
   }
 
-  .login-logo {
+  .login-mobile-brand {
     display: block;
+    margin-bottom: 52px;
   }
 
   .app-shell {
@@ -606,6 +782,27 @@ a {
 
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-panel {
+    padding: 28px 20px 40px;
+  }
+
+  .login-mobile-brand {
+    margin-bottom: 42px;
+  }
+
+  .login-form h1 {
+    font-size: 2rem;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
   }
 }
 

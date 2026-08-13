@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { LogIn, UserPlus } from "lucide-react";
+import { ArrowUpRight, LockKeyhole, LogIn, ShieldCheck, UserPlus } from "lucide-react";
 import {
   ApiError,
   createInitialAccount,
@@ -80,18 +80,46 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
-      <section className="login-brand" aria-label="RunBase" />
+      <section className="login-brand" aria-label="RunBase identity">
+        <div className="login-brand-grid" aria-hidden />
+        <div className="login-brand-content">
+          <div className="login-brand-header">
+            <Image
+              className="login-brand-logo"
+              src="/logo.png"
+              alt="RunBase"
+              width={440}
+              height={176}
+              priority
+            />
+            <span>Systems / Operations</span>
+          </div>
+          <div className="login-brand-message">
+            <span className="login-brand-kicker">Control with clarity</span>
+            <h2>Run the work behind the work.</h2>
+            <p>One protected workspace for users, clients, plans and orders.</p>
+          </div>
+          <div className="login-brand-footer">
+            <span><ShieldCheck aria-hidden size={16} /> Role-based access</span>
+            <span><LockKeyhole aria-hidden size={16} /> Protected workspace</span>
+          </div>
+        </div>
+      </section>
       <section className="login-panel">
         <form className="login-form" onSubmit={handleSubmit} aria-busy={mode === "loading"}>
-          <Image className="login-logo" src="/logo.png" alt="RunBase" width={420} height={168} priority />
-          <p className="eyebrow">{mode === "setup" ? "Initial setup" : "Admin Panel"}</p>
-          <h1>{mode === "setup" ? "Create administrator" : "RunBase"}</h1>
-          <p>
-            {mode === "setup"
-              ? "Create the account that will manage RunBase."
-              : "Secure management for clients, plans, orders and roles."}
-          </p>
-          {mode === "loading" ? <div className="state">Checking account setup</div> : null}
+          <div className="login-mobile-brand">
+            <Image src="/logo.png" alt="RunBase" width={286} height={114} priority />
+          </div>
+          <div className="login-form-heading">
+            <p className="eyebrow">{mode === "setup" ? "Initial setup" : "Workspace access"}</p>
+            <h1>{mode === "setup" ? "Create your administrator account" : "Welcome back"}</h1>
+            <p>
+              {mode === "setup"
+                ? "Set up the account that will own this RunBase workspace."
+                : "Sign in to continue to your operations workspace."}
+            </p>
+          </div>
+          {mode === "loading" ? <div className="state login-state">Checking workspace setup</div> : null}
           {mode === "setup" ? (
             <div className="field">
               <label htmlFor="name">Name</label>
@@ -174,7 +202,7 @@ export default function LoginPage() {
                   </div>
                 </>
               ) : null}
-              <button className="button button-full" disabled={isSubmitting} type="submit">
+              <button className="button button-full login-submit" disabled={isSubmitting} type="submit">
                 {mode === "setup"
                   ? <UserPlus aria-hidden size={18} />
                   : <LogIn aria-hidden size={18} />}
@@ -187,6 +215,10 @@ export default function LoginPage() {
             </>
           ) : null}
           {error ? <div className="alert alert-error">{error}</div> : null}
+          <div className="login-form-footer">
+            <span><span className="login-status-dot" /> Authentication gateway</span>
+            <span>RunBase <ArrowUpRight aria-hidden size={13} /></span>
+          </div>
         </form>
       </section>
     </main>
