@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const frontendUrl = "http://localhost:3000";
-const apiUrl = "http://localhost:5140";
+const frontendUrl = "http://127.0.0.1:3000";
+const apiUrl = "http://127.0.0.1:5140";
 const localOperaExecutable = "/Applications/Opera.app/Contents/MacOS/Opera";
 const useLocalOpera = process.platform === "darwin" && !process.env.CI;
 
@@ -41,14 +41,15 @@ export default defineConfig({
         ASPNETCORE_ENVIRONMENT: "Development",
         ASPNETCORE_URLS: apiUrl,
         ConnectionStrings__DefaultConnection: "",
-        DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: "false"
+        DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: "false",
+        Frontend__AllowedOrigins__0: frontendUrl
       },
       reuseExistingServer: false,
       timeout: 120_000,
       url: `${apiUrl}/health`
     },
     {
-      command: "npm run dev -- --hostname localhost --port 3000",
+      command: "npm run dev -- --hostname 127.0.0.1 --port 3000",
       env: {
         NEXT_PUBLIC_API_BASE_URL: apiUrl
       },

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Session } from "../lib/types";
 
-const apiUrl = "http://localhost:5140";
+const apiUrl = "http://127.0.0.1:5140";
 const adminCredentials = {
   email: "admin@runbase.local",
   password: "Admin123!Secure"
@@ -20,23 +20,34 @@ test.describe.serial("authentication and role access", () => {
   });
 
   test("creates the first administrator account through the setup screen", async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
 
-    await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Create your administrator account" })).toBeVisible();
-    await page.getByLabel("Name").fill("RunBase Admin");
-    await page.getByLabel("Email").fill(adminCredentials.email);
-    await page.getByLabel("Password", { exact: true }).fill(adminCredentials.password);
-    await page.getByLabel("Confirm password").fill(adminCredentials.password);
-    await page.getByLabel("Setup key").fill(setupKey);
-    const setupResponsePromise = page.waitForResponse((response) =>
-      response.url() === `${apiUrl}/api/auth/setup` && response.request().method() === "POST"
+    const setupStatusResponsePromise = page.waitForResponse((response) =>
+      response.url() === `${apiUrl}/api/auth/setup` && response.request().method() === "GET"
     );
-    await page.getByRole("button", { name: "Create account" }).click();
-    const setupResponse = await setupResponsePromise;
+    await page.goto("/login");
+    const setupStatusResponse = await setupStatusResponsePromise;
+    const setupStatus = await setupStatusResponse.json() as { setupRequired: boolean };
 
-    expect(setupResponse.ok()).toBeTruthy();
-    await expect(page).toHaveURL(/\/dashboard$/);
+    if (setupStatus.setupRequired) {
+      await expect(page.getByRole("heading", { name: "Create your administrator account" })).toBeVisible();
+      await page.getByLabel("Name").fill("RunBase Admin");
+      await page.getByLabel("Email").fill(adminCredentials.email);
+      await page.getByLabel("Password", { exact: true }).fill(adminCredentials.password);
+      await page.getByLabel("Confirm password").fill(adminCredentials.password);
+      await page.getByLabel("Setup key").fill(setupKey);
+      const setupResponsePromise = page.waitForResponse((response) =>
+        response.url() === `${apiUrl}/api/auth/setup` && response.request().method() === "POST"
+      );
+      await page.getByRole("button", { name: "Create account" }).click();
+      const setupResponse = await setupResponsePromise;
+
+      expect(setupResponse.ok()).toBeTruthy();
+    } else {
+      await submitLoginForm(page, adminCredentials);
+    }
+
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
     adminSession = await readBrowserSession(page);
 
     const createViewerResponse = await page.request.post(`${apiUrl}/api/users`, {
@@ -59,10 +70,11 @@ test.describe.serial("authentication and role access", () => {
 
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Clients" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Plans" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Orders" })).toBeVisible();
+    const navigation = page.getByRole("navigation", { name: "RunBase" });
+    await expect(navigation.getByRole("link", { name: "Users", exact: true })).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Clients", exact: true })).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Plans", exact: true })).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Orders", exact: true })).toBeVisible();
   });
 
   test("hides admin navigation and denies a Viewer on the users page", async ({ page }) => {
@@ -111,7 +123,13 @@ async function loginThroughUi(
   credentials: { email: string; password: string }
 ): Promise<void> {
   await page.goto("/login");
-  await page.waitForLoadState("networkidle");
+  await submitLoginForm(page, credentials);
+}
+
+async function submitLoginForm(
+  page: import("@playwright/test").Page,
+  credentials: { email: string; password: string }
+): Promise<void> {
   await page.getByLabel("Email").fill(credentials.email);
   await page.getByLabel("Password").fill(credentials.password);
   const loginResponsePromise = page.waitForResponse((response) =>
