@@ -335,17 +335,130 @@ Criterio de pronto:
 - Somente uma conta inicial pode assumir a role Admin.
 - Contas posteriores continuam sob controle do CRUD administrativo com RBAC.
 
+### V10 - Organizations e Isolamento Multi-Tenant
+
+Objetivo: criar a fronteira de dados por organizacao antes de ampliar credenciais e regras operacionais.
+
+- [x] Criar entidade `Organization`.
+- [ ] Criar entidade `Membership` entre usuario e organizacao.
+- [ ] Mover roles operacionais de `User` para `Membership`.
+- [ ] Criar capacidade `Owner` e proteger o ultimo Owner ativo.
+- [ ] Permitir que um usuario participe de multiplas organizacoes com roles independentes.
+- [ ] Criar contexto autenticado com organizacao e membership ativas.
+- [ ] Criar troca segura de organizacao com reemissao ou renovacao do contexto.
+- [ ] Adicionar `OrganizationId` em todas as entidades operacionais.
+- [ ] Tornar repositories, Services, dashboard e auditoria tenant-aware.
+- [ ] Adicionar indices, constraints e relacionamentos que impecam referencias entre tenants.
+- [ ] Impedir que payloads, headers ou URLs definam um tenant sem membership valida.
+- [ ] Retornar `404` para recursos pertencentes a outro tenant sem confirmar sua existencia.
+- [ ] Criar duas organizacoes de teste com dados, usuarios e roles independentes.
+- [ ] Cobrir leitura, escrita, relacionamentos e tentativas cruzadas com testes de integracao.
+- [ ] Seguir o guia de arquitetura e aceitacao em [`MULTI_TENANCY.md`](./MULTI_TENANCY.md).
+
+Criterio de pronto:
+
+- Usuario autentica e opera somente dentro de uma membership ativa.
+- Duas organizacoes podem possuir dados semelhantes sem colisao ou influencia mutua.
+- Conhecer um ID de outro tenant nao permite consultar, alterar ou inferir o recurso.
+- O isolamento e comprovado por testes automatizados contra acessos cruzados.
+
+### V11 - Seguranca de Contas e Credenciais
+
+Objetivo: fortalecer o ciclo de vida das contas e reduzir riscos relacionados a credenciais, sessoes e alteracoes administrativas criticas.
+
+- [ ] Criar fluxo seguro de convite para novos usuarios.
+- [ ] Criar recuperacao e redefinicao de senha com token de uso unico e expiracao curta.
+- [ ] Permitir alteracao de senha pelo usuario autenticado mediante confirmacao da senha atual.
+- [ ] Revogar refresh tokens e sessoes ativas apos redefinicao de senha ou desativacao da conta.
+- [ ] Permitir que o usuario visualize e encerre suas sessoes ativas.
+- [ ] Exigir autenticacao recente para alteracao de role, status ou credenciais.
+- [ ] Impedir exposicao de tokens, senhas e segredos em logs, URLs e respostas da API.
+- [ ] Auditar login, falhas de autenticacao, recuperacao de senha, revogacao de sessao e alteracoes de acesso.
+- [ ] Cobrir os novos fluxos com testes unitarios, de integracao e E2E.
+
+Criterio de pronto:
+
+- Nenhuma credencial temporaria precisa ser compartilhada manualmente.
+- Recuperacao de acesso invalida tokens anteriores e nao revela se uma conta existe.
+- Alteracoes administrativas criticas exigem uma sessao autenticada recentemente.
+- Eventos de autenticacao relevantes podem ser investigados sem expor dados sensiveis.
+
+### V12 - Assinaturas e Regras de Dominio
+
+Objetivo: transformar planos, clientes e pedidos em um fluxo de assinatura consistente, historico e auditavel.
+
+- [ ] Criar `Subscription` como entidade propria entre cliente e plano.
+- [ ] Permitir uma assinatura ativa por cliente e manter multiplas assinaturas historicas.
+- [ ] Definir estados `Trial`, `Active`, `PastDue`, `Paused`, `Cancelled` e `Expired`.
+- [ ] Registrar periodo atual, proxima cobranca, pausa, cancelamento e motivo da alteracao.
+- [ ] Preservar snapshot de nome, estagio, ciclo e preco do plano contratado.
+- [ ] Versionar ou arquivar planos sem alterar contratos historicos.
+- [ ] Definir `Order` como registro comercial imutavel apos sua conclusao.
+- [ ] Formalizar transicoes validas de status para pedidos e assinaturas.
+- [ ] Registrar motivo para cancelamento, reembolso, pausa e suspensao.
+- [ ] Aplicar controle de concorrencia e idempotencia nas mutacoes criticas.
+- [ ] Auditar alteracoes em usuarios, clientes, planos, pedidos e assinaturas.
+- [ ] Cobrir regras e transicoes com testes automatizados.
+
+Criterio de pronto:
+
+- O estado atual de cada assinatura pode ser explicado pelo seu historico.
+- Mudancas em planos nao alteram contratos ou pedidos ja registrados.
+- Transicoes invalidas, duplicadas ou concorrentes sao rejeitadas com seguranca.
+
+### V13 - Central de Comunicacao
+
+Objetivo: permitir comunicacoes operacionais e promocionais sem expor os dados de contato dos clientes aos operadores.
+
+- [ ] Evoluir campanhas para os estados `Draft`, `PendingApproval`, `Scheduled`, `Processing`, `Completed` e `Cancelled`.
+- [ ] Criar segmentacao por plano, status da assinatura e situacao de cobranca.
+- [ ] Criar modelos para promocao, cobranca a vencer, atraso e comunicacoes operacionais.
+- [ ] Permitir previa da mensagem e quantidade de destinatarios sem revelar contatos.
+- [ ] Exigir aprovacao antes do agendamento de campanhas sensiveis ou em massa.
+- [ ] Criar processamento assincro com fila, tentativas limitadas e idempotencia.
+- [ ] Descriptografar o contato somente dentro do processo isolado de entrega.
+- [ ] Registrar status de entrega, falha e motivo tecnico sem persistir o contato em texto aberto.
+- [ ] Implementar supressao, descadastro e regras de consentimento.
+- [ ] Auditar criacao, aprovacao, cancelamento e envio de campanhas.
+- [ ] Cobrir segmentacao, aprovacao, privacidade e processamento com testes.
+
+Criterio de pronto:
+
+- Operadores conseguem comunicar-se com segmentos sem visualizar emails ou telefones completos.
+- Todo envio possui origem, aprovacao, resultado e trilha de auditoria.
+- Falhas de entrega podem ser tratadas sem duplicar mensagens.
+
+### V14 - Inteligencia Operacional
+
+Objetivo: transformar o dashboard em uma area de decisao e acompanhamento do trabalho diario.
+
+- [ ] Tornar metricas clicaveis e vinculadas a listas filtradas.
+- [ ] Criar fila de trabalho para cobrancas proximas, atrasos, trials expirando e campanhas pendentes.
+- [ ] Adicionar filtros por periodo, plano, status e responsavel.
+- [ ] Criar timeline operacional por cliente com eventos de assinatura, pedido e comunicacao.
+- [ ] Adicionar tags, responsavel interno e motivos estruturados para suspensao ou cancelamento.
+- [ ] Criar indicadores de receita recorrente, conversao de trial, inadimplencia e cancelamento.
+- [ ] Permitir exportacoes controladas, mascaradas e auditadas quando autorizadas.
+- [ ] Definir retencao, anonimizacao e exclusao logica para dados operacionais.
+- [ ] Adicionar monitoramento e alertas para falhas de autenticacao, campanhas e processamento.
+- [ ] Cobrir filtros, indicadores, filas e contratos de privacidade com testes.
+
+Criterio de pronto:
+
+- O dashboard conduz o operador diretamente aos itens que exigem acao.
+- Indicadores podem ser rastreados ate dados operacionais consistentes.
+- Consultas, exportacoes e historicos respeitam RBAC, mascaramento e auditoria.
+
 ## Estado Consolidado
 
-As fundacoes de backend, frontend, seguranca, persistencia, cloud, testes e bootstrap administrativo foram concluidas ate a V9. A proxima versao deve partir da reformulacao planejada do frontend, sem reabrir etapas encerradas neste roadmap.
+As fundacoes de backend, frontend, seguranca, persistencia, cloud, testes e bootstrap administrativo foram concluidas ate a V9. As versoes V10 a V14 estao planejadas e ainda nao foram iniciadas. O proximo incremento e a V10, com foco em organizacoes, memberships e isolamento multi-tenant.
 
 ## Fora do Escopo Inicial
 
-- Multiempresa/SaaS completo.
+- Banco, container ou deploy dedicado por organizacao.
 - Billing real com gateway de pagamento.
 - Permissoes configuraveis por tela ou acao.
-- Auditoria detalhada para todas as entidades.
 - Notificacoes em tempo real.
-- Relatorios avancados.
+- Relatorios financeiros ou contabeis avancados.
 
 Esses itens fazem sentido depois que o produto principal estiver confiavel.

@@ -3,6 +3,7 @@ using RunBase.Application.Auth;
 using RunBase.Application.Security;
 using RunBase.Infrastructure.Clients;
 using RunBase.Domain.Notifications;
+using RunBase.Domain.Organizations;
 using RunBase.Domain.Orders;
 using RunBase.Domain.Plans;
 using RunBase.Domain.Users;
@@ -28,6 +29,8 @@ public sealed class RunBaseDbContext : DbContext
 
     public DbSet<NotificationCampaign> NotificationCampaigns => Set<NotificationCampaign>();
 
+    public DbSet<Organization> Organizations => Set<Organization>();
+
     public DbSet<SensitiveDataAuditEntry> SensitiveDataAuditEntries => Set<SensitiveDataAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -38,6 +41,7 @@ public sealed class RunBaseDbContext : DbContext
         ConfigurePlans(modelBuilder);
         ConfigureOrders(modelBuilder);
         ConfigureNotificationCampaigns(modelBuilder);
+        ConfigureOrganizations(modelBuilder);
         ConfigureSensitiveDataAuditEntries(modelBuilder);
     }
 
@@ -139,6 +143,28 @@ public sealed class RunBaseDbContext : DbContext
             entity.Property(campaign => campaign.ScheduledAt);
             entity.Property(campaign => campaign.CreatedAt).IsRequired();
             entity.Property(campaign => campaign.UpdatedAt).IsRequired();
+        });
+    }
+
+    private static void ConfigureOrganizations(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Organization>(entity =>
+        {
+            entity.ToTable("organizations");
+            entity.HasKey(organization => organization.Id);
+            entity.Property(organization => organization.Name)
+                .HasMaxLength(Organization.MaxNameLength)
+                .IsRequired();
+            entity.Property(organization => organization.Slug)
+                .HasMaxLength(Organization.MaxSlugLength)
+                .IsRequired();
+            entity.HasIndex(organization => organization.Slug).IsUnique();
+            entity.Property(organization => organization.Status)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .IsRequired();
+            entity.Property(organization => organization.CreatedAt).IsRequired();
+            entity.Property(organization => organization.UpdatedAt).IsRequired();
         });
     }
 

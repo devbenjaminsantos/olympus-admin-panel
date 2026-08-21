@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RunBase.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using RunBase.Infrastructure.Persistence;
 namespace RunBase.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RunBaseDbContext))]
-    partial class RunBaseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260821173355_AddOrganizations")]
+    partial class AddOrganizations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
